@@ -14,8 +14,7 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const [unreadNotifs, unreadMessages, pendingFriends] = await Promise.all([
-    prisma.notification.count({ where: { userId: user.id, readAt: null } }),
+  const [unreadMessages, pendingFriends] = await Promise.all([
     prisma.chatMessage.count({ where: { receiverId: user.id, readAt: null } }),
     prisma.friendship.count({ where: { addresseeId: user.id, status: "PENDING" } }),
   ]);
@@ -23,7 +22,6 @@ export default async function DashboardLayout({
   return (
     <DashboardShell 
       user={user} 
-      unreadNotifs={unreadNotifs}
       unreadMessages={unreadMessages}
       pendingFriends={pendingFriends}
     >

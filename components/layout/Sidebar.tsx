@@ -48,12 +48,6 @@ const LogOutIcon = () => (
   </svg>
 );
 
-const BellIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-  </svg>
-);
-
 const MessageSquareIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -66,21 +60,21 @@ const LayoutIcon = () => (
   </svg>
 );
 
-export default function Sidebar({ 
-  user, 
-  unreadNotifs = 0,
-  unreadMessages = 0,
-  pendingFriends = 0,
-  isOpen = false,
-  onClose
-}: { 
-  user: User; 
-  unreadNotifs?: number;
+interface SidebarProps {
+  user: User;
   unreadMessages?: number;
   pendingFriends?: number;
   isOpen?: boolean;
   onClose?: () => void;
-}) {
+}
+
+export default function Sidebar({ 
+  user, 
+  unreadMessages = 0,
+  pendingFriends = 0,
+  isOpen = false,
+  onClose
+}: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -96,7 +90,6 @@ export default function Sidebar({
       </svg>
     ) },
     { href: "/dashboard/contacts", label: "Kontakty", icon: <UsersIcon />, badge: pendingFriends },
-    { href: "/dashboard/notifications", label: "Notifikace", icon: <BellIcon />, badge: unreadNotifs },
   ];
 
   async function handleLogout() {

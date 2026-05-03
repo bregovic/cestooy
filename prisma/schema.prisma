@@ -29,15 +29,12 @@ model User {
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  passwordResetToken  String?   @unique
-  passwordResetExpires DateTime?
 
   // Social Relations
   friendshipsAsRequester Friendship[] @relation("FriendshipRequester")
   friendshipsAsAddressee Friendship[] @relation("FriendshipAddressee")
   sentMessages      ChatMessage[] @relation("SentMessages")
   receivedMessages  ChatMessage[] @relation("ReceivedMessages")
-  notifications     Notification[]
   
   // Trip Relations
   ownedTrips        Trip[]        @relation("TripOwner")
@@ -51,8 +48,6 @@ model User {
   expensesOwed      ExpenseSplit[]
 
   sessions          Session[]
-  auditLogs         AuditLog[]
-  bugReports        BugReport[]   @relation("BugReporter")
 
   @@map("users")
 }
@@ -253,7 +248,7 @@ model ExpenseSplit {
   @@map("expense_splits")
 }
 
-// ─── NOTIFICATIONS & CHAT ──────────────────────────────────────────────────────
+// ─── MESSAGING ──────────────────────────────────────────────────────────────
 
 model ChatMessage {
   id          String   @id @default(cuid())
@@ -268,74 +263,4 @@ model ChatMessage {
 
   @@index([senderId, receiverId])
   @@map("chat_messages")
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      String
-  payload   Json
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
-
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-// ─── SYSTEM ───────────────────────────────────────────────────────────────────
-
-model AuditLog {
-  id           String    @id @default(cuid())
-  actorId      String?
-  entityType   String
-  entityId     String
-  action       String
-  metadata     Json?
-  createdAt    DateTime  @default(now())
-
-  actor        User?     @relation(fields: [actorId], references: [id])
-
-  @@map("audit_logs")
-}
-
-model BugReport {
-  id          String    @id @default(cuid())
-  reporterId  String
-  title       String
-  description String
-  status      String    @default("PENDING")
-  createdAt   DateTime  @default(now())
-
-  reporter    User      @relation("BugReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-
-  @@map("bug_reports")
-}
-
-model Currency {
-  code        String   @id
-  name        String
-  symbol      String?
-  isActive    Boolean  @default(true)
-  isBase      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  rates       ExchangeRate[]
-
-  @@map("currencies")
-}
-
-model ExchangeRate {
-  id           String   @id @default(cuid())
-  currencyCode String
-  year         Int
-  month        Int?
-  day          Int?
-  rateToCzk    Decimal  @db.Decimal(12, 6)
-  createdAt    DateTime @default(now())
-
-  currency     Currency @relation(fields: [currencyCode], references: [code], onDelete: Cascade)
-
-  @@unique([currencyCode, year, month, day])
-  @@map("exchange_rates")
 }
