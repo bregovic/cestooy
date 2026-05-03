@@ -2,79 +2,151 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { Metadata } from "next";
+import PostComposer from "@/components/trips/PostComposer";
+import DashboardFeed from "@/components/social/DashboardFeed";
 
 export const metadata: Metadata = {
-  title: "Přehled",
+  title: "Cestooy | Moje Zeď",
 };
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  // Později sem přidáme reálná data z DB
-  const myTripsCount = 0;
-  const sharedTripsCount = 0;
+  const myTrips = await prisma.trip.findMany({
+    where: {
+      members: { some: { userId: user.id } }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 3
+  });
+
+  const friendRequests = await prisma.friendship.findMany({
+    where: { addresseeId: user.id, status: "PENDING" },
+    include: { requester: { select: { name: true, avatar: true } } }
+  });
 
   return (
-    <div className="page-content animate-fade-in">
-      <div className="flex justify-between items-center mb-10">
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: "var(--brand-600)" }}>Ahoj, {user.name.split(" ")[0]}! 🌍</h1>
-          <p className="text-secondary">Tady začínají tvá dobrodružství.</p>
-        </div>
-        <Link href="/dashboard/trips/new" className="btn btn-primary" style={{ padding: '12px 24px' }}>
-          + Nový výlet
-        </Link>
-      </div>
+    <div className="animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left/Main Column */}
+        <div className="lg:col-span-8 space-y-8">
+          
+          {/* Welcome & Quick Action */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Ahoj, {user.name.split(" ")[0]}! 🌍</h1>
+              <p className="text-secondary mt-1">Kam se vydáme za dalším dobrodružstvím?</p>
+            </div>
+            <Link href="/dashboard/trips/new" className="btn btn-primary px-8 py-4 shadow-xl shadow-brand-200 hover:scale-105 transition-transform">
+              ➕ Nový výlet
+            </Link>
+          </div>
 
-      {/* Množiny výletů - Core sekce */}
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Tvé výlety</h2>
-          <Link href="/dashboard/trips" className="text-brand-600 font-medium hover:underline">Zobrazit vše</Link>
-        </div>
+          {/* Quick Trips Overview */}
+          {myTrips.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold">Aktuální cesty</h2>
+                <Link href="/dashboard/trips" className="text-xs font-bold text-brand-600 hover:underline">Všechny výlety →</Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {myTrips.map(trip => (
+                  <Link key={trip.id} href={`/dashboard/trips/${trip.id}`} className="group relative h-32 rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all">
+                    {trip.coverImage ? (
+                      <img src={trip.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full bg-brand-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-500">🎒</div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent p-4 flex flex-col justify-end">
+                      <div className="text-white font-bold text-sm truncate">{trip.title}</div>
+                      <div className="text-white/60 text-[10px] uppercase tracking-widest">{trip.status === 'ONGOING' ? 'PRÁVĚ TEĎ' : 'PLÁNOVÁNO'}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {myTripsCount === 0 ? (
-          <div className="card bg-muted" style={{ borderStyle: 'dashed', borderRadius: 'var(--radius-2xl)' }}>
-            <div className="card-body py-16 text-center">
-              <div className="mb-4 text-4xl">🎒</div>
-              <h3 className="text-lg font-medium mb-2">Zatím žádné výlety</h3>
-              <p className="text-muted max-w-sm mx-auto mb-6">
-                Vytvoř si svůj první výlet, přidej fotky a pozvi přátele, aby s tebou sdíleli zážitky.
-              </p>
-              <Link href="/dashboard/trips/new" className="btn btn-outline">Začít plánovat</Link>
+          {/* Post Composer on Wall */}
+          <div className="card shadow-xl overflow-visible" style={{ borderRadius: '2.5rem' }}>
+            <div className="p-6 md:p-8">
+              <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <span className="text-xl">✨</span> Sdílej svůj moment
+              </h3>
+              <PostComposer onSuccess={() => {}} />
             </div>
           </div>
-        ) : (
-          <div className="grid-3">
-            {/* Tady budou karty výletů */}
-          </div>
-        )}
-      </div>
 
-      <div className="grid-2">
-        {/* Poslední aktivita / Feed přátel */}
-        <section>
-          <h2 className="text-xl font-semibold mb-6">Novinky od přátel</h2>
-          <div className="card">
-            <div className="card-body py-12 text-center text-muted">
-              Sleduj příběhy svých přátel. Jakmile někdo z tvého okolí vyrazí na cestu, uvidíš to zde.
+          {/* Main Social Feed */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Zeď zážitků 📸</h2>
+            </div>
+            <DashboardFeed />
+          </div>
+        </div>
+
+        {/* Right Sidebar Column */}
+        <div className="lg:col-span-4 space-y-8">
+          
+          {/* Friend Requests Mini Widget */}
+          {friendRequests.length > 0 && (
+            <div className="card bg-brand-50 border-brand-100 shadow-xl overflow-hidden" style={{ borderRadius: '2.5rem' }}>
+              <div className="p-6">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-brand-600 mb-4">Žádosti o přátelství</h3>
+                <div className="space-y-4">
+                  {friendRequests.map(req => (
+                    <div key={req.id} className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-white shadow-sm flex items-center justify-center">
+                        {req.requester.avatar ? <img src={req.requester.avatar} className="w-full h-full object-cover" /> : <span className="font-bold text-xs">{req.requester.name[0]}</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold truncate">{req.requester.name}</div>
+                        <div className="text-[10px] text-secondary">Chce být tvůj přítel</div>
+                      </div>
+                      <Link href="/dashboard/contacts" className="btn btn-primary btn-sm rounded-lg px-3">Zobrazit</Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming Trips Info */}
+          <div className="card shadow-xl overflow-hidden group" style={{ borderRadius: '2.5rem' }}>
+            <div className="p-8 text-center space-y-4">
+              <div className="text-5xl mb-2 group-hover:scale-110 transition-transform duration-500">⛺</div>
+              <h3 className="font-bold">Další cíl?</h3>
+              <p className="text-xs text-secondary">Máš už naplánovanou další cestu? Nezapomeň pozvat přátele!</p>
+              <Link href="/dashboard/trips/new" className="btn btn-outline w-full py-4 rounded-2xl">Založit výlet</Link>
             </div>
           </div>
-        </section>
 
-        {/* Rychlé nástroje - Settle Up / Výdaje */}
-        <section>
-          <h2 className="text-xl font-semibold mb-6">Společné výdaje</h2>
-          <div className="card">
-            <div className="card-body">
-              <p className="mb-4 text-muted">Máš vše vyrovnané? Tady uvidíš přehled dlužných částek z tvých společných výletů.</p>
-              <div style={{ padding: '16px', background: 'rgba(249, 165, 33, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(249, 165, 33, 0.2)' }}>
-                <span className="text-sm font-medium">Aktuálně: Vše vyrovnáno ✅</span>
+          {/* Community Stats or Activity */}
+          <div className="card shadow-xl overflow-hidden" style={{ borderRadius: '2.5rem' }}>
+            <div className="p-8">
+              <h3 className="text-sm font-bold uppercase tracking-widest mb-6">Tvoje aktivita</h3>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-100 flex items-center justify-center text-2xl">🌍</div>
+                  <div>
+                    <div className="text-xs text-secondary">Navštíveno zemí</div>
+                    <div className="font-bold text-xl">--</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-success-100 flex items-center justify-center text-2xl">📸</div>
+                  <div>
+                    <div className="text-xs text-secondary">Celkem zážitků</div>
+                    <div className="font-bold text-xl">--</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
+
+        </div>
       </div>
     </div>
   );
