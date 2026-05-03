@@ -18,28 +18,30 @@ export default async function DashboardLayout({
     const [unreadMessages, pendingFriends] = await Promise.all([
       prisma.chatMessage.count({ where: { receiverId: user.id, readAt: null } }),
       prisma.friendship.count({ where: { addresseeId: user.id, status: "PENDING" } }),
-    ]);
+    ]).catch(err => {
+      console.error("Prisma error in layout:", err);
+      return [0, 0];
+    });
 
     return (
       <DashboardShell 
         user={user} 
-        unreadMessages={unreadMessages}
+        unreadMessages={unreadMessages} 
         pendingFriends={pendingFriends}
       >
         {children}
       </DashboardShell>
     );
   } catch (error: any) {
+    if (error.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
     return (
       <div style={{ padding: '2rem', background: '#fff1f2', color: '#991b1b', border: '2px solid #f87171', borderRadius: '1rem', margin: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>⚠️ Serverová chyba dashboardu</h1>
-        <p style={{ marginTop: '0.5rem' }}>Omlouváme se, ale při načítání dashboardu došlo k chybě:</p>
-        <pre style={{ marginTop: '1rem', padding: '1rem', background: '#000', color: '#fff', borderRadius: '0.5rem', overflow: 'auto' }}>
-          {error.message || 'Neznámá chyba'}
-          {"\n"}
-          {error.stack}
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>⚠️ Serverová chyba layoutu</h1>
+        <pre style={{ marginTop: '1rem', padding: '1rem', background: '#000', color: '#fff', borderRadius: '0.5rem' }}>
+          {error.message}
         </pre>
-        <p style={{ marginTop: '1rem', fontSize: '0.8rem' }}>Zkus obnovit stránku nebo kontaktuj podporu.</p>
       </div>
     );
   }
