@@ -26,6 +26,8 @@ export default async function DashboardPage() {
     include: { requester: { select: { name: true, avatar: true } } }
   });
 
+  const firstName = user?.name ? user.name.split(" ")[0] : "Cestovateli";
+
   return (
     <div className="animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -35,7 +37,7 @@ export default async function DashboardPage() {
           {/* Welcome & Quick Action */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Ahoj, {user.name.split(" ")[0]}! 🌍</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Ahoj, {firstName}! 🌍</h1>
               <p className="text-secondary mt-1">Kam se vydáme za dalším dobrodružstvím?</p>
             </div>
             <Link href="/dashboard/trips/new" className="btn btn-primary px-8 py-4 shadow-xl shadow-brand-200 hover:scale-105 transition-transform">
