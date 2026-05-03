@@ -10,7 +10,7 @@ export async function DELETE(
     const user = await requireAuth();
     const { id } = await params;
 
-    const post = await prisma.post.findUnique({
+    const post = await prisma.tripPost.findUnique({
       where: { id },
       select: { authorId: true }
     });
@@ -23,7 +23,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.post.delete({
+    await prisma.tripPost.delete({
       where: { id }
     });
 
