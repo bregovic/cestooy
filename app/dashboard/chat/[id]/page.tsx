@@ -163,7 +163,7 @@ export default function ChatConversationPage() {
   };
 
   return (
-    <DashboardShell user={user} pendingRequests={0} unreadNotifs={0}>
+    <DashboardShell user={user}>
       <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden social-layout" style={{ background: "var(--bg-base)" }}>
         <div className="shadow-lg" style={{ width: "100%", maxWidth: 800, background: "var(--bg-surface)", display: "flex", flexDirection: "column", height: "100%", borderRight: "1px solid var(--border-subtle)", borderRadius: '0 0 12px 0' }}>
           {/* Chat Header */}

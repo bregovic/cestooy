@@ -50,7 +50,7 @@ export default function WallPage() {
   }
 
   return (
-    <DashboardShell user={user} pendingRequests={0} unreadNotifs={0}>
+    <DashboardShell user={user}>
       <div className="page-content animate-fade-in social-layout">
         <div className="feed-container">
           
