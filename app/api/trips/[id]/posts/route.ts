@@ -5,11 +5,11 @@ import { requireAuth } from "@/lib/auth";
 // POST /api/trips/[id]/posts - Vytvoření nového příspěvku (foto, blog, check-in)
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth();
-    const tripId = params.id;
+    const { id: tripId } = await params;
     const body = await req.json();
 
     const { content, mediaUrls, type, lat, lng, locationName } = body;
@@ -58,10 +58,10 @@ export async function POST(
 // GET /api/trips/[id]/posts - Získání všech příspěvků pro daný výlet
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tripId = params.id;
+    const { id: tripId } = await params;
 
     const posts = await prisma.tripPost.findMany({
       where: { tripId },
