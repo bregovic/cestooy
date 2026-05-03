@@ -1,7 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const fromEmail = process.env.EMAIL_FROM || "Cestooy <noreply@Cestooy.app>";
+const fromEmail = process.env.EMAIL_FROM || "Cestooy <noreply@cestooy.app>";
 
 interface SendEmailOptions {
   to: string | string[];
@@ -10,7 +9,14 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || apiKey.includes("vloz_svuj_klic")) {
+    console.warn("[Email] Skipping send - No valid API key provided.");
+    return { success: false, error: "Missing API Key" };
+  }
+
   try {
+    const resend = new Resend(apiKey);
     const data = await resend.emails.send({
       from: fromEmail,
       to,
