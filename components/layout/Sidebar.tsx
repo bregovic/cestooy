@@ -27,30 +27,10 @@ const LayoutGridIcon = () => (
   </svg>
 );
 
-const CreditCardIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" x2="22" y1="10" y2="10" />
-  </svg>
-);
-
 const UsersIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
     <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
-
-const InboxIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
-    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-  </svg>
-);
-
-const WalletIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
   </svg>
 );
 
@@ -86,15 +66,8 @@ const LayoutIcon = () => (
   </svg>
 );
 
-const StarIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
 export default function Sidebar({ 
   user, 
-  pendingRequests = 0, 
   unreadNotifs = 0,
   unreadMessages = 0,
   pendingFriends = 0,
@@ -102,7 +75,6 @@ export default function Sidebar({
   onClose
 }: { 
   user: User; 
-  pendingRequests?: number;
   unreadNotifs?: number;
   unreadMessages?: number;
   pendingFriends?: number;
@@ -150,7 +122,7 @@ export default function Sidebar({
       <aside className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
         <div className="sidebar-logo" style={{ justifyContent: 'space-between', padding: '24px 20px', borderBottom: '1px solid #e2e8f0' }}>
           <Link href="/dashboard" className="flex transition-opacity hover:opacity-80" onClick={onClose}>
-            <Image src="/logo.png" alt="CestooyLogo" width={140} height={60} style={{ objectFit: 'contain', height: 'auto' }} priority />
+            <Image src="/logo.png" alt="Cestooy" width={140} height={60} style={{ objectFit: 'contain', height: 'auto' }} priority />
           </Link>
           
           <button 
@@ -165,7 +137,6 @@ export default function Sidebar({
         <nav className="sidebar-nav" role="navigation" aria-label="Hlavní navigace">
           <span className="nav-section-label">Hlavní menu</span>
           {navItems.map((item) => {
-            // Strict match for dashboard to avoid double highlighting
             const isActive = item.href === "/dashboard" 
                ? pathname === "/dashboard" 
                : pathname.startsWith(item.href);
