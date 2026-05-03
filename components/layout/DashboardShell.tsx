@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 
 interface DashboardShellProps {
   user: any;
-  unreadNotifs: number;
+  unreadNotifs?: number;
   unreadMessages?: number;
   pendingFriends?: number;
   children: React.ReactNode;
@@ -16,7 +16,7 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ 
   user, 
-  unreadNotifs, 
+  unreadNotifs = 0, 
   unreadMessages = 0,
   pendingFriends = 0,
   children 
