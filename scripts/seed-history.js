@@ -7,7 +7,7 @@ async function main() {
     {
       version: "v1.0.0",
       title: "Základní spuštění projektu",
-      description: "Inicializace systému Palalate. Implementace základní správy předplatných, kategorií a uživatelských profilů. První verze dashboardu.",
+      description: "Inicializace systému Cestooy. Implementace základní správy předplatných, kategorií a uživatelských profilů. První verze dashboardu.",
       createdAt: new Date("2026-03-05T10:00:00Z")
     },
     {
