@@ -67,7 +67,7 @@ export default function DashboardFeed() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl overflow-hidden bg-brand-100 flex items-center justify-center shadow-inner ring-4 ring-brand-50">
-                  {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold">{post.author.name[0]}</span>}
+                  {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold">{(post.author.name?.[0] || "?")}</span>}
                 </div>
                 <div>
                   <div className="font-bold text-lg leading-tight">{post.author.name}</div>

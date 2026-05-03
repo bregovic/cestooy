@@ -100,7 +100,7 @@ export default function ContactsPage() {
       {avatar ? (
         <img src={avatar} alt={name} className="w-full h-full object-cover" />
       ) : (
-        name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+        (name || "?").split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)
       )}
     </div>
   );

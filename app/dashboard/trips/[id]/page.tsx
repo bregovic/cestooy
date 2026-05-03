@@ -74,7 +74,7 @@ export default function TripDetailPage() {
             <div className="flex -space-x-4">
               {trip.members?.map((m, i) => (
                 <div key={i} className="w-12 h-12 rounded-full border-4 border-white overflow-hidden bg-brand-200 shadow-xl" title={m.user.name}>
-                  {m.user.avatar ? <img src={m.user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold">{m.user.name[0]}</div>}
+                  {m.user.avatar ? <img src={m.user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold">{(m.user.name?.[0] || "?")}</div>}
                 </div>
               ))}
               <button className="w-12 h-12 rounded-full border-4 border-white bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-bold hover:bg-white/40 transition-colors shadow-xl">
@@ -126,7 +126,7 @@ export default function TripDetailPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-2xl overflow-hidden bg-brand-100 flex items-center justify-center shadow-inner">
-                            {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold">{post.author.name[0]}</span>}
+                            {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold">{(post.author.name?.[0] || "?")}</span>}
                           </div>
                           <div>
                             <div className="font-bold text-lg">{post.author.name}</div>
@@ -210,7 +210,7 @@ export default function TripDetailPage() {
                 {trip.members?.map((m, i) => (
                   <div key={i} className="flex items-center gap-4 group">
                     <div className="w-12 h-12 rounded-2xl overflow-hidden bg-muted group-hover:scale-110 transition-transform">
-                      {m.user.avatar ? <img src={m.user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold">{m.user.name[0]}</div>}
+                      {m.user.avatar ? <img src={m.user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold">{(m.user.name?.[0] || "?")}</div>}
                     </div>
                     <div className="flex-1">
                       <div className="font-bold group-hover:text-brand-600 transition-colors">{m.user.name}</div>
