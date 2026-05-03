@@ -59,17 +59,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
-    const { content, type } = await req.json();
+    const { content, type, locationName, lat, lng, tripId, mediaUrls } = await req.json();
 
-    if (!content || content.trim() === "") {
+    if (!content && !locationName) {
       return NextResponse.json({ error: "Příspěvek nesmí být prázdný" }, { status: 400 });
     }
 
     const post = await prisma.tripPost.create({
       data: {
         authorId: user.id,
-        content: content.trim(),
-        type: type || "PHOTO",
+        content: content?.trim(),
+        type: type || (locationName ? "CHECKIN" : "BLOG"),
+        locationName,
+        lat,
+        lng,
+        tripId,
+        mediaUrls: mediaUrls || [],
       },
       include: {
         author: { select: { id: true, name: true, avatar: true } },
