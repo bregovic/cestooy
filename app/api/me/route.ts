@@ -1,53 +1,72 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json(null, { status: 401 });
+  try {
+    const user = await requireAuth();
 
-  // Refetch to get fresh notification settings
-  const fullUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { 
-      id: true, name: true, email: true, role: true, bio: true, avatar: true,
-      emailNotifyGlobal: true, emailNotifyRequests: true, emailNotifyChat: true,
-      emailNotifyNewService: true, emailNotifyGrants: true
-    },
-  });
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { 
+        id: true, 
+        name: true, 
+        email: true, 
+        role: true, 
+        bio: true, 
+        avatar: true,
+        blogSlug: true,
+        blogTitle: true,
+        blogTheme: true,
+        blogHeaderImage: true,
+        createdAt: true
+      },
+    });
 
-  return NextResponse.json(fullUser);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Uživatel nenalezen" }, { status: 404 });
+    }
+
+    return NextResponse.json(currentUser);
+  } catch (err) {
+    console.error("[GET /api/me]", err);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 }
 
-export async function PATCH(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function PATCH(req: Request) {
+  try {
+    const user = await requireAuth();
+    const body = await req.json();
 
-  const body = await req.json();
-  const { 
-    name, bio, avatar, 
-    emailNotifyGlobal, emailNotifyRequests, emailNotifyChat, 
-    emailNotifyNewService, emailNotifyGrants 
-  } = body;
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: body.name,
+        bio: body.bio,
+        avatar: body.avatar,
+        blogSlug: body.blogSlug,
+        blogTitle: body.blogTitle,
+        blogTheme: body.blogTheme,
+        blogHeaderImage: body.blogHeaderImage,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        bio: true,
+        avatar: true,
+        blogSlug: true,
+        blogTitle: true,
+        blogTheme: true,
+        blogHeaderImage: true,
+      },
+    });
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      ...(name ? { name } : {}),
-      ...(bio !== undefined ? { bio } : {}),
-      ...(avatar !== undefined ? { avatar } : {}),
-      ...(emailNotifyGlobal !== undefined ? { emailNotifyGlobal } : {}),
-      ...(emailNotifyRequests !== undefined ? { emailNotifyRequests } : {}),
-      ...(emailNotifyChat !== undefined ? { emailNotifyChat } : {}),
-      ...(emailNotifyNewService !== undefined ? { emailNotifyNewService } : {}),
-      ...(emailNotifyGrants !== undefined ? { emailNotifyGrants } : {}),
-    },
-    select: { 
-      id: true, name: true, email: true, role: true, bio: true, avatar: true,
-      emailNotifyGlobal: true, emailNotifyRequests: true, emailNotifyChat: true,
-      emailNotifyNewService: true, emailNotifyGrants: true
-    },
-  });
-
-  return NextResponse.json(updated);
+    return NextResponse.json(updatedUser);
+  } catch (err) {
+    console.error("[PATCH /api/me]", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

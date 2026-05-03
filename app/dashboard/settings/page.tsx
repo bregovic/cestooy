@@ -10,11 +10,10 @@ interface UserData {
   role: string;
   bio?: string;
   avatar?: string;
-  emailNotifyGlobal?: boolean;
-  emailNotifyRequests?: boolean;
-  emailNotifyChat?: boolean;
-  emailNotifyNewService?: boolean;
-  emailNotifyGrants?: boolean;
+  blogSlug?: string;
+  blogTitle?: string;
+  blogTheme?: string;
+  blogHeaderImage?: string;
 }
 
 export default function SettingsPage() {
@@ -22,254 +21,188 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [blogSlug, setBlogSlug] = useState("");
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogTheme, setBlogTheme] = useState("MODERN");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"profile" | "security" | "services" | "categories" | "currencies" | "system" | "development">("profile");
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [systemUnlocked, setSystemUnlocked] = useState(false);
-  const [adminPass, setAdminPass] = useState("");
-  const [editorTarget, setEditorTarget] = useState<null | 'profile' | 'service'>(null);
+  const [tab, setTab] = useState<"profile" | "blog" | "security">("profile");
+  const [editorTarget, setEditorTarget] = useState<null | 'profile' | 'blog'>(null);
   const [editorImage, setEditorImage] = useState<string | null>(null);
-
-  const onFileSelectForAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setEditorImage(reader.result?.toString() || null);
-        setEditorTarget('profile');
-      };
-      reader.readAsDataURL(e.target.files[0]);
-    }
-  };
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((data) => {
-      if (data) {
+      if (data && !data.error) {
         setUser(data);
         setName(data.name || "");
         setBio(data.bio || "");
         setAvatar(data.avatar || "");
+        setBlogSlug(data.blogSlug || "");
+        setBlogTitle(data.blogTitle || "");
+        setBlogTheme(data.blogTheme || "MODERN");
       }
     });
   }, []);
 
-  async function updateProfile(partialData: { name?: string; bio?: string; avatar?: string }) {
+  async function updateData(partial: any) {
     setSaving(true);
     const res = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: partialData.name ?? name,
-        bio: partialData.bio ?? bio,
-        avatar: partialData.avatar ?? avatar,
-        ...partialData
-      }),
+      body: JSON.stringify(partial),
     });
     if (res.ok) {
-      const updatedData = await res.json();
-      setUser(updatedData);
+      const updated = await res.json();
+      setUser(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     }
     setSaving(false);
   }
 
-  async function saveProfile(e: React.FormEvent) {
-    if (e) e.preventDefault();
-    await updateProfile({ name, bio, avatar });
-  }
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>, target: 'profile' | 'blog') => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditorImage(reader.result?.toString() || null);
+        setEditorTarget(target);
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
 
   return (
-    <>
-      <div className="page-content animate-fade-in">
-        <div className="tabs">
-          <button className={`tab ${tab === "profile" ? "active" : ""}`} onClick={() => setTab("profile")}>
-            👤 Profil
-          </button>
-          <button className={`tab ${tab === "security" ? "active" : ""}`} onClick={() => setTab("security")}>
-            🔒 Bezpečnost
-          </button>
-          <button className={`tab ${tab === "services" ? "active" : ""}`} onClick={() => setTab("services")}>
-            📋 Číselník služeb
-          </button>
-          <button className={`tab ${tab === "categories" ? "active" : ""}`} onClick={() => setTab("categories")}>
-            📁 Kategorie
-          </button>
-          <button className={`tab ${tab === "currencies" ? "active" : ""}`} onClick={() => setTab("currencies")}>
-            💰 Měny
-          </button>
-          <button className={`tab ${tab === "system" ? "active" : ""}`} onClick={() => setTab("system")}>
-            ⚙️ Systém
-          </button>
-          <button className={`tab ${tab === "development" ? "active" : ""}`} onClick={() => setTab("development")}>
-            🛠️ Vývoj
-          </button>
-        </div>
+    <div className="page-content animate-fade-in max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8">Nastavení ⚙️</h1>
 
-        {tab === "profile" && (
-          <div className="card" style={{ maxWidth: 600 }}>
-            <div className="card-header"><h3>Profilové informace</h3></div>
-            <form onSubmit={saveProfile}>
-              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {saved && (
-                  <div className="alert alert-success">
-                    ✅ Profil uložen!
-                  </div>
-                )}
-
-                <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 16 }}>
-                  <div 
-                    className="user-avatar group" 
-                    style={{ width: 100, height: 100, fontSize: "2.5rem", border: "4px solid var(--bg-hover)", cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-                    onClick={() => document.getElementById('avatar-upload')?.click()}
-                  >
-                    {avatar ? (
-                      <img src={avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      user?.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?"
-                    )}
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" style={{ color: 'white' }}>
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-                      </svg>
-                    </div>
-                  </div>
-                  <input type="file" id="avatar-upload" hidden accept="image/*" onChange={onFileSelectForAvatar} />
-                  <div className="flex-1">
-                    <div className="form-group mb-0">
-                      <label className="form-label">Profilová fotka</label>
-                      <div className="flex gap-2">
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => document.getElementById('avatar-upload')?.click()}>
-                          📂 Nahrát z počítače
-                        </button>
-                        {avatar && (
-                          <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => { setAvatar(''); updateProfile({ avatar: '' }); }}>
-                            Odstranit
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Jméno</label>
-                  <input type="text" className="form-input" value={name} onChange={(e) => setName(e.target.value)} required />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">O mně</label>
-                  <textarea className="form-textarea" placeholder="Pár slov o sobě..." value={bio} onChange={(e) => setBio(e.target.value)} />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input type="email" className="form-input" value={user?.email || ""} disabled style={{ opacity: 0.7 }} />
-                </div>
-
-                <div className="divider" style={{ margin: "16px 0" }} />
-                
-                <div className="form-group">
-                  <label className="form-label">✉️ Emailová oznámení</label>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-xl">
-                      <div>
-                        <div className="font-bold text-sm">Povolit emaily</div>
-                        <div className="text-xs text-muted">Globální vypínač</div>
-                      </div>
-                      <label className="switch">
-                        <input type="checkbox" checked={user?.emailNotifyGlobal ?? true} onChange={(e) => updateProfile({ emailNotifyGlobal: e.target.checked } as any)} />
-                        <span className="slider round"></span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="card-footer" style={{ justifyContent: "flex-end" }}>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Ukládám..." : "Uložit změny"}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {tab === "security" && (
-          <div className="card" style={{ maxWidth: 600 }}>
-            <div className="card-header"><h3>Bezpečnost účtu</h3></div>
-            <div className="card-body">
-              {!showPasswordForm ? (
-                <div className="flex justify-between items-center py-4">
-                  <div>
-                    <div className="font-bold">Heslo</div>
-                    <div className="text-sm text-muted">Změňte si své přístupové heslo</div>
-                  </div>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setShowPasswordForm(true)}>Změnit heslo</button>
-                </div>
-              ) : (
-                <PasswordChangeForm onCancel={() => setShowPasswordForm(false)} />
-              )}
-            </div>
-          </div>
-        )}
-
-        {tab === "services" && <ServicesTab />}
-        {tab === "categories" && <CategoriesTab />}
-        {tab === "currencies" && <CurrenciesTab />}
-        
-        {tab === "system" && (
-          <div style={{ maxWidth: 600, margin: "0 auto" }}>
-            {!systemUnlocked ? (
-              <div className="card">
-                <div className="card-header"><h3>🔐 Chráněná sekce</h3></div>
-                <div className="card-body">
-                  <div className="form-group flex gap-2">
-                    <input 
-                      type="password" 
-                      className="form-input flex-1" 
-                      placeholder="Heslo..." 
-                      value={adminPass} 
-                      onChange={e => setAdminPass(e.target.value)} 
-                      onKeyDown={e => e.key === "Enter" && adminPass === "Admin123" && setSystemUnlocked(true)}
-                    />
-                    <button className="btn btn-primary" onClick={() => adminPass === "Admin123" ? setSystemUnlocked(true) : alert("Špatné heslo!")}>Odemknout</button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <SystemTab user={user} />
-            )}
-            <div className="mt-8">
-               <div className="card">
-                 <div className="card-header"><h3>📱 Instalace aplikace</h3></div>
-                 <div className="card-body">
-                   <InstallPwaCard />
-                 </div>
-               </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "development" && <DevelopmentTab user={user} />}
+      <div className="tabs mb-8 bg-white p-2 rounded-2xl shadow-sm border border-muted inline-flex">
+        <button className={`btn ${tab === "profile" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("profile")}>👤 Profil</button>
+        <button className={`btn ${tab === "blog" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("blog")}>✍️ Můj Blog</button>
+        <button className={`btn ${tab === "security" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("security")}>🔒 Bezpečnost</button>
       </div>
 
-      {editorTarget === 'profile' && (
+      {saved && <div className="alert alert-success mb-6 animate-slide-up">✅ Změny byly úspěšně uloženy!</div>}
+
+      {tab === "profile" && (
+        <div className="card shadow-xl overflow-hidden">
+          <div className="p-8">
+            <h3 className="text-xl font-bold mb-6">Osobní informace</h3>
+            <div className="flex flex-col md:flex-row gap-10">
+              <div className="flex flex-col items-center gap-4">
+                <div 
+                  className="user-avatar w-32 h-32 text-4xl shadow-lg border-4 border-brand-100 cursor-pointer group relative overflow-hidden"
+                  onClick={() => document.getElementById('avatar-input')?.click()}
+                >
+                  {avatar ? <img src={avatar} alt="Avatar" className="w-full h-full object-cover" /> : user?.name[0]}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold">ZMĚNIT</div>
+                </div>
+                <input type="file" id="avatar-input" hidden accept="image/*" onChange={(e) => onFileSelect(e, 'profile')} />
+                <button className="btn btn-ghost btn-sm" onClick={() => document.getElementById('avatar-input')?.click()}>Změnit fotku</button>
+              </div>
+
+              <div className="flex-1 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold ml-1">Jméno a příjmení</label>
+                  <input className="input w-full" value={name} onChange={e => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold ml-1">Něco o mně</label>
+                  <textarea className="input w-full min-h-[100px] py-3" value={bio} onChange={e => setBio(e.target.value)} placeholder="Cestovatel, dobrodruh, milovník dobrého jídla..." />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold ml-1">Email (nelze změnit)</label>
+                  <input className="input w-full opacity-60" value={user?.email} disabled />
+                </div>
+                <button className="btn btn-primary px-10 py-4" onClick={() => updateData({ name, bio })} disabled={saving}>
+                  {saving ? "Ukládám..." : "Uložit profil"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "blog" && (
+        <div className="card shadow-xl overflow-hidden">
+          <div className="p-8 space-y-8">
+            <div>
+              <h3 className="text-xl font-bold">Tvůj blogovací kanál ✍️</h3>
+              <p className="text-secondary text-sm">Zde si nastavíš, jak bude vypadat tvá veřejná stránka.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold ml-1">Adresa blogu (Slug)</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted text-sm">cestooy.app/</span>
+                  <input 
+                    className="input flex-1 font-mono text-sm" 
+                    value={blogSlug} 
+                    onChange={e => setBlogSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} 
+                    placeholder="tvoje-jmeno"
+                  />
+                </div>
+                <p className="text-[10px] text-muted">Pouze malá písmena, čísla a pomlčky.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold ml-1">Název blogu</label>
+                <input className="input w-full" value={blogTitle} onChange={e => setBlogTitle(e.target.value)} placeholder="Moje toulky světem" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold ml-1">Styl blogu (Téma)</label>
+                <select className="input w-full" value={blogTheme} onChange={e => setBlogTheme(e.target.value)}>
+                  <option value="MODERN">✨ Moderní (Čisté & Světlé)</option>
+                  <option value="DARK">🌙 Noční (Tmavé & Elegantní)</option>
+                  <option value="ADVENTURE">⛺ Dobrodružné (Zemitě barvy)</option>
+                  <option value="MINIMAL">⚪ Minimalistické</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 bg-brand-50 rounded-[2rem] border border-brand-100 flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-inner">🎨</div>
+              <div className="flex-1 text-center md:text-left">
+                <h4 className="font-bold">Náhled tvého stylu</h4>
+                <p className="text-xs text-secondary mt-1">Tento styl se použije pro tvou hlavní stránku i jednotlivé příběhy, pokud si u nich nezvolíš jiný.</p>
+              </div>
+              <button className="btn btn-primary" onClick={() => updateData({ blogSlug, blogTitle, blogTheme })} disabled={saving}>
+                {saving ? "Ukládám..." : "Uložit nastavení blogu"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "security" && (
+        <div className="card shadow-xl overflow-hidden max-w-lg">
+          <div className="p-8">
+            <h3 className="text-xl font-bold mb-6">Změna hesla</h3>
+            <PasswordChangeForm />
+          </div>
+        </div>
+      )}
+
+      {editorTarget && (
         <AvatarEditor 
           initialImage={editorImage}
           onCancel={() => { setEditorTarget(null); setEditorImage(null); }}
           onSave={async (base64) => {
-            setAvatar(base64);
+            if (editorTarget === 'profile') {
+              setAvatar(base64);
+              await updateData({ avatar: base64 });
+            }
             setEditorTarget(null);
             setEditorImage(null);
-            await updateProfile({ avatar: base64 });
           }}
         />
       )}
-    </>
+    </div>
   );
 }
 
-function PasswordChangeForm({ onCancel }: { onCancel: () => void }) {
+function PasswordChangeForm() {
   const [current, setCurrent] = useState("");
   const [newP, setNewP] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -286,555 +219,20 @@ function PasswordChangeForm({ onCancel }: { onCancel: () => void }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ currentPassword: current, newPassword: newP }),
     });
-    if (res.ok) { setDone(true); setTimeout(onCancel, 2000); }
+    if (res.ok) { setDone(true); }
     else { const d = await res.json(); setError(d.error || "Chyba"); }
     setSaving(false);
   }
 
-  if (done) return <div className="alert alert-success">✅ Heslo změněno!</div>;
+  if (done) return <div className="p-6 bg-success-50 text-success rounded-2xl font-bold text-center">✅ Heslo bylo úspěšně změněno!</div>;
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      {error && <div className="alert alert-error">{error}</div>}
-      <div className="form-group"><label className="form-label">Současné heslo</label><input type="password" dsa-label="Současné heslo" className="form-input" value={current} onChange={e => setCurrent(e.target.value)} required /></div>
-      <div className="form-group"><label className="form-label">Nové heslo</label><input type="password" dsa-label="Nové heslo" className="form-input" value={newP} onChange={e => setNewP(e.target.value)} required /></div>
-      <div className="form-group"><label className="form-label">Potvrzení</label><input type="password" dsa-label="Potvrzení" className="form-input" value={confirm} onChange={e => setConfirm(e.target.value)} required /></div>
-      <div className="flex gap-2 justify-end">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>Zrušit</button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>Uložit</button>
-      </div>
+    <form onSubmit={submit} className="space-y-6">
+      {error && <div className="p-4 bg-danger-50 text-danger rounded-xl text-sm">{error}</div>}
+      <div className="space-y-2"><label className="text-sm font-bold ml-1">Současné heslo</label><input type="password" className="input w-full" value={current} onChange={e => setCurrent(e.target.value)} required /></div>
+      <div className="space-y-2"><label className="text-sm font-bold ml-1">Nové heslo</label><input type="password" className="input w-full" value={newP} onChange={e => setNewP(e.target.value)} required /></div>
+      <div className="space-y-2"><label className="text-sm font-bold ml-1">Potvrzení nového hesla</label><input type="password" className="input w-full" value={confirm} onChange={e => setConfirm(e.target.value)} required /></div>
+      <button type="submit" className="btn btn-primary w-full py-4" disabled={saving}>{saving ? "Ukládám..." : "Změnit heslo"}</button>
     </form>
-  );
-}
-
-function CategoriesTab() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [catName, setCatName] = useState("");
-  const [catIcon, setCatIcon] = useState("📦");
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const EMOJI_GALLERY = ["🎬", "🎵", "☁️", "🎨", "🚀", "📚", "🏠", "🎙️", "📰", "💳"];
-
-  const load = async () => {
-    setLoading(true);
-    const res = await fetch("/api/categories");
-    setCategories(await res.json());
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: catName, icon: catIcon }),
-    });
-    setCatName(""); setEditingId(null); load();
-  };
-
-  if (loading) return <div className="p-8">Načítám...</div>;
-
-  return (
-    <div className="card" style={{ maxWidth: 600 }}>
-      <div className="card-header"><h3>📁 Správa kategorií</h3></div>
-      <div className="card-body">
-        <form onSubmit={save} className="flex gap-2 mb-6">
-          <input className="form-input" placeholder="Zadejte název..." value={catName} onChange={e => setCatName(e.target.value)} />
-          <button className="btn btn-primary">Přidat</button>
-        </form>
-        <div className="grid grid-cols-2 gap-3">
-          {categories.map(c => (
-            <div key={c.id} className="p-3 border rounded-xl flex items-center gap-3">
-              <span className="text-xl">{c.icon}</span>
-              <span className="font-bold">{c.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ServicesTab() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [showFormModal, setShowFormModal] = useState(false);
-
-  const EMPTY_FORM = {
-    name: "", category: "", defaultPrice: 0, currency: "CZK",
-    billingCycle: "MONTHLY", pricingType: "PAID", isShareable: true,
-    description: "", usageMode: "PRIVATE", requiresBookingApproval: false,
-    url: "", iconUrl: "",
-  };
-
-  const [svcForm, setSvcForm] = useState(EMPTY_FORM);
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [cr, sr] = await Promise.all([fetch("/api/categories"), fetch("/api/service-registry")]);
-      setCategories(await cr.json());
-      setServices(await sr.json());
-    } finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const onSync = async () => {
-    if (!confirm("Opravdu sjednotit číselník s vašimi službami?")) return;
-    setSyncing(true);
-    const res = await fetch("/api/admin/sync-services", { method: "POST" });
-    if (res.ok) { alert("Synchronizováno!"); load(); }
-    setSyncing(false);
-  };
-
-  const deleteDuplicates = async () => {
-    if (!confirm("Sloučit duplicity?")) return;
-    setSyncing(true);
-    const res = await fetch("/api/admin/sync-services", { method: "DELETE" });
-    if (res.ok) { alert("Duplicity odstraněny!"); load(); }
-    setSyncing(false);
-  };
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const method = editingServiceId ? "PATCH" : "POST";
-    const url = editingServiceId ? `/api/service-registry/${editingServiceId}` : "/api/service-registry";
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(svcForm),
-    });
-    if (res.ok) { setShowFormModal(false); load(); }
-  };
-
-  const startEdit = (s: any) => {
-    setSvcForm({ ...s, defaultPrice: Number(s.defaultPrice) });
-    setEditingServiceId(s.id);
-    setShowFormModal(true);
-  };
-
-  if (loading) return <div className="p-8">Načítám číselník...</div>;
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="card">
-        <div className="card-header flex justify-between items-center flex-wrap gap-2">
-          <h3>📋 Číselník služeb</h3>
-          <div className="flex gap-2">
-            <button className="btn btn-secondary btn-sm" onClick={onSync} disabled={syncing}>
-              {syncing ? "..." : "🔗 Sjednotit"}
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={deleteDuplicates} disabled={syncing}>
-              🧹 Čistit
-            </button>
-            <button className="btn btn-primary btn-sm" onClick={() => { setSvcForm(EMPTY_FORM); setEditingServiceId(null); setShowFormModal(true); }}>
-              ➕ Přidat službu
-            </button>
-          </div>
-        </div>
-
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Název</th><th>Kategorie</th><th>Cena</th><th></th></tr></thead>
-            <tbody>
-              {services.length === 0 && <tr><td colSpan={4} className="text-center p-8 text-muted">Žádné služby.</td></tr>}
-              {services.map(s => (
-                <tr key={s.id}>
-                  <td><div className="flex items-center gap-2">
-                    {s.iconUrl ? <img src={s.iconUrl} style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, objectFit: 'contain' }} /> : <span>📦</span>}
-                    <span className="font-bold">{s.name}</span>
-                  </div></td>
-                  <td>{s.category}</td>
-                  <td>{Number(s.defaultPrice).toFixed(2)} {s.currency}</td>
-                  <td className="text-right">
-                    <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)}>✏️</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {showFormModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowFormModal(false)}>
-          <div className="modal animate-fade-in" style={{ maxWidth: 650 }}>
-            <div className="modal-header"><h3>{editingServiceId ? "Upravit" : "Přidat"} službu do číselníku</h3></div>
-            <form onSubmit={save} className="modal-body flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
-              <div className="grid-2 gap-4">
-                <div className="form-group">
-                  <label className="form-label">Název služby</label>
-                  <input className="form-input" value={svcForm.name} onChange={e => setSvcForm({...svcForm, name: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Kategorie</label>
-                  <select className="form-select" value={svcForm.category} onChange={e => setSvcForm({...svcForm, category: e.target.value})}>
-                    <option value="">-- Vyberte --</option>
-                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid-2 gap-4">
-                <div className="form-group">
-                  <label className="form-label">Výchozí cena</label>
-                  <div className="input-group">
-                    <input type="number" step="0.01" className="form-input" value={svcForm.defaultPrice} onChange={e => setSvcForm({...svcForm, defaultPrice: parseFloat(e.target.value)})} />
-                    <select className="form-select !w-32" value={svcForm.currency} onChange={e => setSvcForm({...svcForm, currency: e.target.value})}>
-                      <option value="CZK">CZK</option><option value="EUR">EUR</option><option value="USD">USD</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Frekvence platby</label>
-                  <select className="form-select" value={svcForm.billingCycle} onChange={e => setSvcForm({...svcForm, billingCycle: e.target.value})}>
-                    <option value="MONTHLY">Měsíčně</option>
-                    <option value="YEARLY">Ročně</option>
-                    <option value="QUARTERLY">Čtvrtletně</option>
-                    <option value="WEEKLY">Týdně</option>
-                    <option value="ONEOFF">Jednorázově</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">URL adresa služby (Odkaz)</label>
-                <input className="form-input" placeholder="https://..." value={svcForm.url} onChange={e => setSvcForm({...svcForm, url: e.target.value})} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">URL Logo / Ikona</label>
-                <div className="flex gap-3">
-                  <input className="form-input flex-1" placeholder="https://.../logo.png" value={svcForm.iconUrl} onChange={e => setSvcForm({...svcForm, iconUrl: e.target.value})} />
-                  {svcForm.iconUrl && <img src={svcForm.iconUrl} className="w-10 h-10 rounded border object-contain bg-white" alt="Preview" />}
-                </div>
-              </div>
-
-              <div className="grid-2 gap-4">
-                <div className="form-group">
-                  <label className="form-label">Typ zpoplatnění</label>
-                  <select className="form-select" value={svcForm.pricingType} onChange={e => setSvcForm({...svcForm, pricingType: e.target.value})}>
-                    <option value="PAID">Placené</option>
-                    <option value="FREE">Zdarma</option>
-                    <option value="TRIAL">Trial / Zkušební</option>
-                    <option value="INCLUDED">V rámci jiného balíčku</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Způsob užití</label>
-                  <select className="form-select" value={svcForm.usageMode} onChange={e => setSvcForm({...svcForm, usageMode: e.target.value})}>
-                    <option value="PRIVATE">Soukromé</option>
-                    <option value="SHARED">Sdílené</option>
-                    <option value="SHARED_ROTATION">Sdílené (Střídání)</option>
-                    <option value="LICENSE">Licenční klíče</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                 <label className="form-label">Popis služby</label>
-                 <textarea className="form-textarea" rows={3} value={svcForm.description} onChange={e => setSvcForm({...svcForm, description: e.target.value})} />
-              </div>
-
-              <div className="flex flex-col gap-3 p-4 bg-muted border border-subtle rounded-xl">
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <input type="checkbox" className="w-5 h-5 rounded border-subtle shadow-inner" checked={svcForm.isShareable} onChange={e => setSvcForm({...svcForm, isShareable: e.target.checked})} />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold">Povolit sdílení</span>
-                    <span className="text-[10px] text-muted">Umožňuje uživatelům sdílet přístup k této službě s přáteli.</span>
-                  </div>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <input type="checkbox" className="w-5 h-5 rounded border-subtle shadow-inner" checked={svcForm.requiresBookingApproval} onChange={e => setSvcForm({...svcForm, requiresBookingApproval: e.target.checked})} />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold">Vyžadovat schválení rezervací</span>
-                    <span className="text-[10px] text-muted">Nutné manuální potvrzení majitelem při žádosti o slot.</span>
-                  </div>
-                </label>
-              </div>
-
-              <div className="modal-footer px-0 pb-0 mt-2">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowFormModal(false)}>Zrušit</button>
-                <button type="submit" className="btn btn-primary">Uložit službu</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-function CurrenciesTab() {
-  const [currencies, setCurrencies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [importYear, setImportYear] = useState(new Date().getFullYear().toString());
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<any>(null);
-
-  const load = async () => {
-    setLoading(true);
-    const res = await fetch("/api/currencies");
-    setCurrencies(await res.json());
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const runImport = async () => {
-    setImporting(true);
-    setImportResult(null);
-    try {
-      const res = await fetch("/api/currencies/import-cnb", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ year: parseInt(importYear) }),
-      });
-      const data = await res.json();
-      setImportResult(data);
-      if (res.ok) load();
-    } catch {
-      setImportResult({ error: "Chyba spojení" });
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  return (
-    <div className="card" style={{ maxWidth: 800 }}>
-      <div className="card-header"><h3>💰 Správa měn a kurzů</h3></div>
-      <div className="card-body">
-        <p className="text-sm text-muted mb-6">
-          Zde můžete spravovat měny a importovat roční průměrné kurzy z ČNB pro přepočet nákladů.
-        </p>
-
-        <div className="flex gap-2 mb-8 bg-muted p-4 rounded-xl border border-subtle">
-           <div className="flex-1">
-             <label className="block text-[10px] font-bold uppercase mb-1 px-1">Rok pro import</label>
-             <input type="number" className="form-input w-full" value={importYear} onChange={e => setImportYear(e.target.value)} />
-           </div>
-           <div className="flex items-end">
-             <button className="btn btn-secondary whitespace-nowrap" onClick={runImport} disabled={importing}>
-               {importing ? "⌛ Importuji..." : "📥 Importovat kurzy ČNB"}
-             </button>
-           </div>
-        </div>
-
-        {importResult && (
-          <div className={`p-4 rounded-xl mb-6 text-sm border ${importResult.error ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-            {importResult.error ? (
-              <div>
-                <strong>Chyba:</strong> {importResult.error}
-                {importResult.details && <div className="mt-2 text-xs font-mono opacity-80">{importResult.details}</div>}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                 <div className="font-bold">✅ {importResult.message} ({importResult.year})</div>
-                 <div className="grid grid-cols-3 gap-3 mt-1">
-                    <div className="bg-white/50 p-2 rounded-lg border border-green-100">
-                      <div className="text-[10px] uppercase font-bold text-green-800">Nových</div>
-                      <div className="text-lg font-bold">{importResult.inserted}</div>
-                    </div>
-                    <div className="bg-white/50 p-2 rounded-lg border border-green-100">
-                      <div className="text-[10px] uppercase font-bold text-green-800">Aktualizováno</div>
-                      <div className="text-lg font-bold">{importResult.updated}</div>
-                    </div>
-                    <div className="bg-white/50 p-2 rounded-lg border border-green-100">
-                      <div className="text-[10px] uppercase font-bold text-green-800">Pracovních dní</div>
-                      <div className="text-lg font-bold">{importResult.days}</div>
-                    </div>
-                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Kód</th>
-                <th>Měna</th>
-                <th className="text-right">Kurz {importYear} (CZK)</th>
-                <th className="text-right">Poslední aktualizace</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currencies.map(c => {
-                const latestRate = c.rates && c.rates.length > 0 ? c.rates[0] : null;
-                return (
-                  <tr key={c.code}>
-                    <td><span className="badge badge-subtle font-mono">{c.code}</span></td>
-                    <td className="font-medium">{c.name}</td>
-                    <td className="text-right font-bold text-brand-600">
-                      {latestRate ? (
-                        Number(latestRate.rateToCzk).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
-                      ) : (
-                        <span className="text-muted font-normal">---</span>
-                      )}
-                    </td>
-                    <td className="text-right text-[10px] text-muted">
-                      {latestRate ? new Date(latestRate.updatedAt).toLocaleDateString() : "nikdy"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SystemTab({ user }: { user: any }) {
-  const [testing, setTesting] = useState(false);
-  const [result, setResult] = useState<any>(null);
-
-  async function testEmail() {
-    setTesting(true);
-    const res = await fetch("/api/test-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: user.email }) });
-    setResult(await res.json());
-    setTesting(false);
-  }
-
-  return (
-    <div className="card" style={{ maxWidth: 600 }}>
-      <div className="card-header"><h3>⚙️ Systémová nastavení</h3></div>
-      <div className="card-body flex flex-col gap-6">
-        <div>
-          <h4 className="mb-2">📧 Test emailu</h4>
-          <button className="btn btn-primary btn-sm" onClick={testEmail} disabled={testing}>{testing ? "Posílám..." : "Odeslat test"}</button>
-          {result && <div className="mt-2 text-xs">{result.success ? "✅ OK" : "❌ Chyba"}</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DevelopmentTab({ user }: { user: any }) {
-  const [releases, setReleases] = useState<any[]>([]);
-  const [bugs, setBugs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [bugTitle, setBugTitle] = useState("");
-  const [bugText, setBugText] = useState("");
-  const [reporting, setReporting] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    const [rr, br] = await Promise.all([
-      fetch("/api/development/releases"),
-      fetch("/api/development/bugs")
-    ]);
-    setReleases(await rr.json());
-    setBugs(await br.json());
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const reportBug = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!bugTitle) return;
-    setReporting(true);
-    const res = await fetch("/api/development/bugs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: bugTitle, description: bugText, priority: "MEDIUM" }),
-    });
-    if (res.ok) {
-      setBugTitle(""); setBugText("");
-      load();
-    }
-    setReporting(false);
-  };
-
-  // Povolíme zobrazení pro ladění (uživatel hlásí, že je to prázdné)
-  // if (user?.role !== "ADMIN") return <div className="p-8">Pouze pro administrátory.</div>;
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Historie vývoje */}
-      <div className="card">
-        <div className="card-header"><h3>🚀 Historie vývoje</h3></div>
-        <div className="card-body flex flex-col gap-6">
-          {releases.map((rel, idx) => (
-            <div key={rel.id} className="relative pl-6 pb-6 border-l-2 border-brand-100 last:pb-0">
-               <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-brand-500 border-4 border-white shadow-sm" />
-               <div className="flex justify-between items-start mb-1">
-                 <h4 className="font-bold text-brand-700">{rel.version}</h4>
-                 <span className="text-[10px] text-muted">{new Date(rel.createdAt).toLocaleDateString()}</span>
-               </div>
-               <p className="text-sm text-balance leading-relaxed text-slate-600">{rel.description}</p>
-            </div>
-          ))}
-          {releases.length === 0 && <p className="text-muted italic">Žádné záznamy o verzích.</p>}
-        </div>
-      </div>
-
-      {/* Bug reporting */}
-      <div className="flex flex-col gap-8">
-        <div className="card">
-          <div className="card-header"><h3>🐞 Nahlásit chybu</h3></div>
-          <form onSubmit={reportBug} className="card-body flex flex-col gap-4">
-            <input className="form-input" placeholder="Stručný název chyby..." value={bugTitle} onChange={e => setBugTitle(e.target.value)} required />
-            <textarea className="form-textarea" placeholder="Detailní popis a kroky k reprodukci..." value={bugText} onChange={e => setBugText(e.target.value)} />
-            <button className="btn btn-primary" disabled={reporting}>{reporting ? "Odesílám..." : "Nahlásit bug"}</button>
-          </form>
-        </div>
-
-        <div className="card">
-          <div className="card-header"><h3>📋 Seznam nahlášených chyb</h3></div>
-          <div className="card-body flex flex-col gap-2">
-             {bugs.map(bug => (
-               <div key={bug.id} className="p-3 bg-muted rounded-xl border border-subtle flex justify-between items-center group">
-                 <div>
-                   <div className="font-bold text-sm">{bug.title}</div>
-                   <div className="text-[10px] text-muted">Od: {bug.reporter?.name || "Anonym"} • {new Date(bug.createdAt).toLocaleDateString()}</div>
-                 </div>
-                 <span className={`badge ${bug.status === 'FIXED' ? 'badge-green' : 'badge-yellow'} text-[10px]`}>
-                   {bug.status}
-                 </span>
-               </div>
-             ))}
-             {bugs.length === 0 && <p className="text-muted italic p-4 text-center">Zatím žádné nahlášené chyby. Hurá!</p>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InstallPwaCard() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    const handler = (e: any) => { e.preventDefault(); setDeferredPrompt(e); };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const install = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') setDeferredPrompt(null);
-  };
-
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs text-muted">Můžete si nainstalovat aplikaci Cestooy na plochu pro rychlý přístup.</p>
-      <button className="btn btn-secondary btn-sm" disabled={!deferredPrompt} onClick={install}>
-        {deferredPrompt ? "📲 Instalovat Cestooy" : "📦 Již nainstalováno nebo nepodporováno"}
-      </button>
-    </div>
   );
 }
