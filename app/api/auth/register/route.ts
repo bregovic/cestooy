@@ -29,14 +29,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Diagnostic log for DB connection
-    try {
-      await prisma.$connect();
-    } catch (dbErr) {
-      console.error("[Register DB Connection Error]", dbErr);
-      return NextResponse.json({ error: "Chyba připojení k databázi" }, { status: 500 });
-    }
-
     const existing = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
@@ -57,37 +49,6 @@ export async function POST(req: NextRequest) {
         passwordHash,
       },
     });
-
-    // CHECK FOR PENDING INVITATIONS
-    try {
-      const pendingInvites = await prisma.invitation.findMany({
-        where: { email: email.toLowerCase(), status: "PENDING" },
-      });
-
-      if (pendingInvites.length > 0) {
-        for (const invite of pendingInvites) {
-          // Create PENDING friendship (user must explicitly accept after joining)
-          await prisma.friendship.create({
-            data: {
-              requesterId: invite.inviterId,
-              addresseeId: user.id,
-              status: "PENDING",
-              message: invite.message || "Propojení přes pozvánku",
-            },
-          });
-
-          // Mark invite as ACCEPTED (the invitation itself was used, 
-          // but friendship still needs confirmation)
-          await prisma.invitation.update({
-            where: { id: invite.id },
-            data: { status: "ACCEPTED" },
-          });
-        }
-      }
-    } catch (inviteErr) {
-      console.error("[Register] Error processing invitations", inviteErr);
-      // Don't fail registration if invitation linking fails
-    }
 
     // Auto-login after registration
     const token = crypto.randomBytes(32).toString("hex");
@@ -112,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error("[Register Error Detailed]", err);
+    console.error("[Register Error]", err);
     return NextResponse.json({ 
       error: "Vnitřní chyba serveru", 
       details: err instanceof Error ? err.message : String(err) 
