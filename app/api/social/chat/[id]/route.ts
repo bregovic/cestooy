@@ -31,20 +31,6 @@ export async function GET(
       data: { readAt: new Date() },
     });
 
-    // Also mark notifications of type CHAT_MESSAGE_RECEIVED from this sender as read
-    await prisma.notification.updateMany({
-      where: {
-        userId: user.id,
-        type: "CHAT_MESSAGE_RECEIVED",
-        readAt: null,
-        payload: {
-          path: ["senderId"],
-          equals: partnerId
-        }
-      },
-      data: { readAt: new Date() }
-    });
-
     return NextResponse.json({ messages });
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED") {
@@ -77,19 +63,6 @@ export async function POST(
       include: {
         sender: { select: { name: true } }
       }
-    });
-
-    // Notify receiver
-    await prisma.notification.create({
-      data: {
-        userId: partnerId,
-        type: "CHAT_MESSAGE_RECEIVED",
-        payload: {
-          senderId: user.id,
-          senderName: user.name,
-          preview: content.substring(0, 50),
-        },
-      },
     });
 
     return NextResponse.json(message, { status: 201 });

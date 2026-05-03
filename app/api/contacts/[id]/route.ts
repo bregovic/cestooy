@@ -36,17 +36,6 @@ export async function PATCH(
       },
     });
 
-    if (action === "accept") {
-      await prisma.notification.create({
-        data: {
-          userId: updated.requesterId,
-          type: "FRIEND_REQUEST_ACCEPTED",
-          payload: {
-            friendId: user.id,
-            friendName: user.name,
-          },
-        },
-      });
     }
 
     return NextResponse.json(updated);
