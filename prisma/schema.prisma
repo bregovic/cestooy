@@ -158,7 +158,7 @@ enum TripRole {
 
 model TripPost {
   id          String    @id @default(cuid())
-  tripId      String
+  tripId      String?
   authorId    String
   content     String?   // Markdown/Text blogový obsah
   mediaUrls   String[]  // Cloud storage URLs (R2/S3)
@@ -172,7 +172,7 @@ model TripPost {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  trip        Trip?     @relation(fields: [tripId], references: [id], onDelete: Cascade)
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes       Like[]
   comments    Comment[]
