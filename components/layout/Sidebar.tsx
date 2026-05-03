@@ -99,8 +99,9 @@ export default function Sidebar({
     router.refresh();
   }
 
-  const initials = user.name
+  const initials = (user?.name || "C")
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
