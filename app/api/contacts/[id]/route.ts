@@ -36,8 +36,6 @@ export async function PATCH(
       },
     });
 
-    }
-
     return NextResponse.json(updated);
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED") {
