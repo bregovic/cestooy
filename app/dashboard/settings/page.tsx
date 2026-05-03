@@ -93,7 +93,7 @@ export default function SettingsPage() {
                   className="user-avatar w-32 h-32 text-4xl shadow-lg border-4 border-brand-100 cursor-pointer group relative overflow-hidden"
                   onClick={() => document.getElementById('avatar-input')?.click()}
                 >
-                  {avatar ? <img src={avatar} alt="Avatar" className="w-full h-full object-cover" /> : user?.name[0]}
+                  {avatar ? <img src={avatar} alt="Avatar" className="w-full h-full object-cover" /> : (user?.name?.[0] || "?")}
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold">ZMĚNIT</div>
                 </div>
                 <input type="file" id="avatar-input" hidden accept="image/*" onChange={(e) => onFileSelect(e, 'profile')} />
