@@ -19,6 +19,14 @@ model User {
   status            UserStatus @default(ACTIVE)
   avatar            String?
   bio               String?
+  
+  // Blog Customization
+  blogSlug          String?   @unique // např. "pavel-cestovatel"
+  blogTitle         String?           // Název kanálu
+  blogTheme         String    @default("MODERN")
+  blogConfig        Json?             // Layout nastavení (barvy, fonty)
+  blogHeaderImage   String?
+  
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   passwordResetToken  String?   @unique
@@ -102,10 +110,16 @@ model Trip {
   id          String   @id @default(cuid())
   title       String
   description String?
+  slug        String?  @unique // např. "italie-2026"
   startDate   DateTime?
   endDate     DateTime?
   coverImage  String?
   isPublic    Boolean  @default(false)
+  
+  // Trip Customization
+  theme       String   @default("CLASSIC")
+  layout      String   @default("BLOG") // BLOG, GRID, TIMELINE
+  config      Json?    // Specifické nastavení designu pro tento výlet
   
   ownerId     String
   owner       User     @relation("TripOwner", fields: [ownerId], references: [id])
