@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import DashboardShell from "@/components/layout/DashboardShell";
 
 interface Notification {
   id: string;
@@ -12,33 +13,21 @@ interface Notification {
 }
 
 const NOTIF_ICONS: Record<string, string> = {
-  ACCESS_REQUEST_RECEIVED: "📬",
-  ACCESS_REQUEST_APPROVED: "✅",
-  ACCESS_REQUEST_REJECTED: "❌",
-  ACCESS_EXPIRING_SOON: "⏰",
-  SERVICE_RENEWAL_SOON: "🔄",
-  SETTLEMENT_CREATED: "💰",
-  TRANSACTION_OVERDUE: "⚠️",
   FRIEND_REQUEST_RECEIVED: "👋",
   FRIEND_REQUEST_ACCEPTED: "🤝",
-  CREDENTIAL_VIEWED: "👁️",
   CHAT_MESSAGE_RECEIVED: "💬",
   NEW_POST_FRIEND: "📢",
+  TRIP_INVITATION: "🎒",
+  EXPENSE_CREATED: "💰",
 };
 
 const NOTIF_LABELS: Record<string, string> = {
-  ACCESS_REQUEST_RECEIVED: "Nová žádost o přístup",
-  ACCESS_REQUEST_APPROVED: "Přístup schválen",
-  ACCESS_REQUEST_REJECTED: "Žádost zamítnuta",
-  ACCESS_EXPIRING_SOON: "Přístup brzy vyprší",
-  SERVICE_RENEWAL_SOON: "Blíží se obnova",
-  SETTLEMENT_CREATED: "Nové vyúčtování",
-  TRANSACTION_OVERDUE: "Transakce po splatnosti",
-  FRIEND_REQUEST_RECEIVED: "Nová žádost o kontakt",
-  FRIEND_REQUEST_ACCEPTED: "Kontakt přijat",
-  CREDENTIAL_VIEWED: "Zobrazení přihlašovacích údajů",
-  CHAT_MESSAGE_RECEIVED: "Nová zpráva v chatu",
-  NEW_POST_FRIEND: "Nový příspěvek na nástěnce",
+  FRIEND_REQUEST_RECEIVED: "Nová žádost o přátelství",
+  FRIEND_REQUEST_ACCEPTED: "Přátelství navázáno",
+  CHAT_MESSAGE_RECEIVED: "Nová zpráva",
+  NEW_POST_FRIEND: "Nový příspěvek",
+  TRIP_INVITATION: "Pozvánka do výletu",
+  EXPENSE_CREATED: "Nový výdaj ve výletu",
 };
 
 export default function NotificationsPage() {
@@ -47,10 +36,15 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const res = await fetch("/api/notifications");
-    const data = await res.json();
-    setNotifications(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/notifications");
+      const data = await res.json();
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load notifications", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function markAllRead() {
@@ -60,7 +54,7 @@ export default function NotificationsPage() {
       body: JSON.stringify({ ids: "all" }),
     });
     load();
-    router.refresh(); // Sync sidebar badge
+    router.refresh();
   }
 
   async function markAsRead(id: string) {
@@ -73,7 +67,7 @@ export default function NotificationsPage() {
       body: JSON.stringify({ ids: [id] }),
     });
     load();
-    router.refresh(); // Sync sidebar badge
+    router.refresh();
   }
 
   useEffect(() => { load(); }, []);
@@ -91,90 +85,61 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="page-content animate-fade-in">
-      <div className="flex justify-end mb-2">
+    <div className="page-content animate-fade-in max-w-3xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Notifikace 🔔</h1>
+          <p className="text-secondary">Vše důležité, co se na tvých cestách děje.</p>
+        </div>
         {unread > 0 && (
           <button
-            id="mark-all-read-btn"
-            className="btn btn-secondary btn-sm"
+            className="btn btn-ghost btn-sm text-brand-600 font-bold"
             onClick={markAllRead}
           >
-            Označit vše jako přečtené
+            ✓ Označit vše jako přečtené
           </button>
         )}
       </div>
 
-      <div className="card">
+      <div className="card shadow-xl overflow-hidden" style={{ borderRadius: 'var(--radius-2xl)' }}>
         {loading ? (
-          <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="p-6 space-y-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton" style={{ height: 64, borderRadius: "var(--radius-md)" }} />
+              <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
             ))}
           </div>
         ) : notifications.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28">
-                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-              </svg>
-            </div>
-            <div className="empty-title">Žádné notifikace</div>
-            <p className="empty-desc">Klid. Žádný poplach, žádné zprávy, žádný stres. 😌</p>
+          <div className="py-20 text-center">
+            <div className="text-6xl mb-4">✨</div>
+            <h3 className="text-xl font-bold">Klid a mír</h3>
+            <p className="text-secondary mt-2">Momentálně nemáš žádné nové zprávy.</p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {notifications.map((n, i) => (
+          <div className="divide-y divide-muted/10">
+            {notifications.map((n) => (
               <div
                 key={n.id}
                 onClick={() => markAsRead(n.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 14,
-                  padding: "16px 24px",
-                  borderBottom: i < notifications.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                  background: n.readAt ? "transparent" : "rgba(139, 92, 246, 0.04)",
-                  transition: "background var(--transition-fast)",
-                  cursor: n.readAt ? "default" : "pointer",
-                }}
-                className={!n.readAt ? "hover-notif" : ""}
+                className={`flex items-start gap-4 p-5 transition-all cursor-pointer ${!n.readAt ? 'bg-brand-50/30' : 'hover:bg-muted/5'}`}
               >
-                <div style={{
-                  width: 40, height: 40, borderRadius: "var(--radius-md)",
-                  background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1.2rem", flexShrink: 0,
-                }}>
+                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-muted/20 flex items-center justify-center text-2xl flex-shrink-0">
                   {NOTIF_ICONS[n.type] || "🔔"}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: n.readAt ? 400 : 600, color: "var(--text-primary)", fontSize: "0.9rem" }}>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm ${!n.readAt ? 'font-bold' : 'font-medium'}`}>
                     {n.type === 'FRIEND_REQUEST_ACCEPTED' && n.payload?.friendName 
-                      ? `${n.payload.friendName} přijal(a) váš kontakt`
+                      ? `${n.payload.friendName} přijal(a) tvou žádost o přátelství`
                       : n.type === 'CHAT_MESSAGE_RECEIVED' && n.payload?.senderName
-                      ? `Nová zpráva od ${n.payload.senderName}`
+                      ? `Nová zpráva od: ${n.payload.senderName}`
                       : n.type === 'NEW_POST_FRIEND' && n.payload?.authorName
-                      ? `${n.payload.authorName} přidal(a) příspěvek`
+                      ? `${n.payload.authorName} přidal(a) nový zážitek`
+                      : n.type === 'TRIP_INVITATION' && n.payload?.tripTitle
+                      ? `Byl(a) jsi pozván(a) do výletu: ${n.payload.tripTitle}`
                       : (NOTIF_LABELS[n.type] || n.type)}
                   </div>
-                  {n.payload?.serviceName && (
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                      Služba: <strong>{n.payload.serviceName}</strong>
-                      {n.payload.requesterName ? ` • Od: ${n.payload.requesterName}` : ""}
-                      {n.payload.ownerName ? ` • Schválil/a: ${n.payload.ownerName}` : ""}
-                    </div>
-                  )}
-                  {n.type === 'FRIEND_REQUEST_ACCEPTED' && !n.payload?.friendName && (
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                      Vaše žádost o přátelství byla schválena.
-                    </div>
-                  )}
+                  <div className="text-xs text-muted mt-1">{fmtDate(n.createdAt)}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{fmtDate(n.createdAt)}</span>
-                  {!n.readAt && <div className="notif-dot" />}
-                </div>
+                {!n.readAt && <div className="w-2.5 h-2.5 rounded-full bg-brand-500 mt-2" />}
               </div>
             ))}
           </div>
