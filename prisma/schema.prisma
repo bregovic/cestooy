@@ -115,6 +115,7 @@ model Trip {
   endDate     DateTime?
   coverImage  String?
   isPublic    Boolean  @default(false)
+  status      TripStatus @default(PLANNING)
   
   // Trip Customization
   theme       String   @default("CLASSIC")
@@ -152,6 +153,13 @@ enum TripRole {
   ADMIN
   MEMBER
   VIEWER
+}
+
+enum TripStatus {
+  PLANNING
+  ONGOING
+  FINISHED
+  ARCHIVED
 }
 
 // ─── CONTENT (Instagram / Blog hybrid) ────────────────────────────────────────

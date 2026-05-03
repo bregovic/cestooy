@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         isPublic: isPublic || false,
+        status: body.status || "PLANNING",
         ownerId: user.id,
         members: {
           create: {
