@@ -68,7 +68,38 @@ export const emailTemplates = {
         <div style="margin: 24px 0;">
           <a href="${requestsUrl}" style="background-color: #6366f1; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">Zobrazit žádost</a>
         </div>
-        <p style="font-size: 12px; color: #666;">Cestooy – Vaše centrum sdílených předplatných.</p>
+        <p style="font-size: 12px; color: #666;">Cestooy – Tvoje cesty. Tvoje příběhy.</p>
+      </div>
+    `,
+  }),
+
+  friendRequestReceived: (addresseeName: string, requesterName: string, contactsUrl: string) => ({
+    subject: `👋 Nová žádost o propojení od ${requesterName}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 24px; color: #333;">
+        <h2 style="color: #6366f1;">Žádost o propojení</h2>
+        <p>Ahoj ${addresseeName},</p>
+        <p>Uživatel <strong>${requesterName}</strong> si tě chce přidat do svých kontaktů na Cestooy.</p>
+        <div style="margin: 24px 0;">
+          <a href="${contactsUrl}" style="background-color: #6366f1; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">Zobrazit žádost</a>
+        </div>
+        <p style="font-size: 12px; color: #666;">Cestooy – Tvoje cesty. Tvoje příběhy.</p>
+      </div>
+    `,
+  }),
+
+  invitationReceived: (inviterName: string, registerUrl: string, message?: string) => ({
+    subject: `📩 Pozvánka do Cestooy od ${inviterName}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 32px; background-color: #F5F5EA; color: #1E3A3A;">
+        <h2 style="color: #1E3A3A;">Ahoj!</h2>
+        <p>Uživatel <strong>${inviterName}</strong> tě zve do nové platformy <strong>Cestooy</strong>.</p>
+        ${message ? `<div style="padding: 16px; background: white; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F9A521;">"${message}"</div>` : ''}
+        <p>Přidej se a začni sdílet své cestovatelské zážitky a příběhy.</p>
+        <div style="margin: 32px 0;">
+          <a href="${registerUrl}" style="background-color: #F9A521; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">Vytvořit účet</a>
+        </div>
+        <p style="font-size: 12px; color: #305555;">Cestooy – Tvoje cesty. Tvoje příběhy.</p>
       </div>
     `,
   }),
