@@ -14,7 +14,7 @@ export async function GET(_req: Request) {
       { id: "v13", version: "v1.3.0", title: "Centrum vývoje a hlášení chyb", description: "Implementována sekce Vývoj pro sledování historie verzí. Přidán systém pro hlášení bugů s podporou vkládání screenshotů (Ctrl+V).", createdAt: new Date("2026-03-14") },
       { id: "v12", version: "v1.2.0", title: "Sociální interakce a Chat", description: "Spuštění sociálních funkcí. Nástěnka s příspěvky, systém přátelství a real-time chat s podporou GIFů (Giphy) a emoji.", createdAt: new Date("2026-03-12") },
       { id: "v11", version: "v1.1.0", title: "Finanční analýza a statistiky", description: "Přidána sekce Analýza nákladů. Implementovány grafy vývoje výdajů, přehledy podle kategorií a možnost exportu/importu dat do CSV.", createdAt: new Date("2026-03-09") },
-      { id: "v10", version: "v1.0.0", title: "Základní spuštění projektu", description: "Inicializace systému Palalate. Implementace základní správy předplatných, kategorií a uživatelských profilů. První verze dashboardu.", createdAt: new Date("2026-03-05") }
+      { id: "v10", version: "v1.0.0", title: "Základní spuštění projektu", description: "Inicializace systému Cestooy. Implementace základní správy předplatných, kategorií a uživatelských profilů. První verze dashboardu.", createdAt: new Date("2026-03-05") }
     ] as any;
   }
 

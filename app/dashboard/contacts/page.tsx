@@ -304,7 +304,7 @@ export default function ContactsPage() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                   autoFocus
                 />
-                <span className="form-hint">Pokud uživatel není v Palalate, odešleme mu pozvánku emailem.</span>
+                <span className="form-hint">Pokud uživatel není v Cestooy, odešleme mu pozvánku emailem.</span>
               </div>
               <div className="form-group">
                 <label className="form-label">Zpráva (nepovinná)</label>

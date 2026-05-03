@@ -100,7 +100,7 @@ export default function ResetPasswordPage() {
     <div className="auth-page">
       <div className="auth-card animate-slide-up">
         <div className="auth-logo" style={{ marginBottom: 40 }}>
-          <Image src="/logo.png" alt="Palalate" width={240} height={120} style={{ margin: "0 auto", width: "auto", height: "auto", maxWidth: "100%" }} />
+          <Image src="/logo.png" alt="Cestooy" width={240} height={120} style={{ margin: "0 auto", width: "auto", height: "auto", maxWidth: "100%" }} />
         </div>
 
         <h2 style={{ marginBottom: 24, textAlign: "center" }}>Obnova hesla</h2>

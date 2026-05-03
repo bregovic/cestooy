@@ -117,17 +117,13 @@ export default function Sidebar({
     { href: "/dashboard", label: "Přehled", icon: <LayoutGridIcon /> },
     { href: "/dashboard/wall", label: "Nástěnka", icon: <LayoutIcon /> },
     { href: "/dashboard/chat", label: "Chat", icon: <MessageSquareIcon />, badge: unreadMessages },
-    { href: "/dashboard/services", label: "Služby", icon: <CreditCardIcon /> },
-    { href: "/dashboard/wishes", label: "Přání", icon: <StarIcon /> },
-    { href: "/dashboard/costs", label: "Náklady", icon: (
+    { href: "/dashboard/trips", label: "Moje cesty", icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6" y1="20" x2="6" y2="14" />
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
       </svg>
     ) },
     { href: "/dashboard/contacts", label: "Kontakty", icon: <UsersIcon />, badge: pendingFriends },
-    { href: "/dashboard/requests", label: "Žádosti", icon: <InboxIcon />, badge: pendingRequests },
-    { href: "/dashboard/settlements", label: "Vyúčtování", icon: <WalletIcon /> },
     { href: "/dashboard/notifications", label: "Notifikace", icon: <BellIcon />, badge: unreadNotifs },
   ];
 
@@ -154,7 +150,7 @@ export default function Sidebar({
       <aside className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
         <div className="sidebar-logo" style={{ justifyContent: 'space-between', padding: '24px 20px', borderBottom: '1px solid #e2e8f0' }}>
           <Link href="/dashboard" className="flex transition-opacity hover:opacity-80" onClick={onClose}>
-            <Image src="/logo.png" alt="PalalateLogo" width={140} height={60} style={{ objectFit: 'contain', height: 'auto' }} priority />
+            <Image src="/logo.png" alt="CestooyLogo" width={140} height={60} style={{ objectFit: 'contain', height: 'auto' }} priority />
           </Link>
           
           <button 

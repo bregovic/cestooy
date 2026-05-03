@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Check session cookie
-  const session = request.cookies.get("palalate_session");
+  const session = request.cookies.get("cestooy_session");
 
   if (!session && (pathname.startsWith("/dashboard") || pathname.startsWith("/api/"))) {
     if (pathname.startsWith("/api/")) {

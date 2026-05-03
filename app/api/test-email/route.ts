@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     const result = await sendEmail({
       to: targetEmail,
-      subject: "🧪 Testovací email z Palalate",
+      subject: "🧪 Testovací email z Cestooy",
       html: `
         <div style="font-family: sans-serif; padding: 20px; background: #0f0d1a; color: #e5e1f0; border-radius: 12px;">
           <h2 style="color: #a78bfa;">Email funguje! 🚀</h2>
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
           <p><strong>Čas odeslání:</strong> ${new Date().toLocaleString('cs-CZ')}</p>
           <p><strong>Cílová adresa:</strong> ${targetEmail}</p>
           <hr style="border-color: #2d2a3d;" />
-          <p style="font-size: 12px; color: #9ca3af;">Odesláno z aplikace Palalate na Railway.</p>
+          <p style="font-size: 12px; color: #9ca3af;">Odesláno z aplikace Cestooy na Railway.</p>
         </div>
       `,
     });

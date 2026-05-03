@@ -103,7 +103,7 @@ export default function DashboardShell({
         >
           <Image 
             src="/logo.png" 
-            alt="Palalate" 
+            alt="Cestooy" 
             width={110} 
             height={38} 
             style={{ objectFit: 'contain', maxHeight: 38 }} 

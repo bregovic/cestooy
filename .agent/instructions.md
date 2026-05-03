@@ -1,6 +1,6 @@
-# Palalate Development Standards & Instructions
+# Cestooy Development Standards & Instructions
 
-Toto jsou naše standardy pro vývoj aplikace **Palalate**. Prosím, dodržuj je při každé úpravě kódu.
+Toto jsou naše standardy pro vývoj aplikace **Cestooy**. Prosím, dodržuj je při každé úpravě kódu.
 
 ## 📱 Mobile-First & Responsiveness
 *   Všechny nové prvky musí být **vždy optimalizovány pro mobilní zařízení**.

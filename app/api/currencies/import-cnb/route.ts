@@ -15,6 +15,8 @@ interface CnbRateRow {
   code: string;
   amount: number;
   rate: number; // kurz za 1 jednotku v CZK
+  month?: number | null;
+  day?: number | null;
 }
 
 async function fetchCnbYearlyRates(year: number): Promise<CnbRateRow[]> {
@@ -23,6 +25,9 @@ async function fetchCnbYearlyRates(year: number): Promise<CnbRateRow[]> {
   // Pro aktuální rok se rok.txt na webu ČNB chová jako časová řada (jiný formát), 
   // tak raději použijeme denní kurz pro získání aktuálních dat.
   // Pro minulé roky rok.txt vrací tabulku ročních průměrů.
+  // Pro aktuální rok použijeme denní kurzy, pro minulé roky roční historii.
+  // Pokud chceme ROČNÍ PRŮMĚR pro minulé roky, prumerne_kurzy.txt je lepší.
+  // Ale uživatel chce spíše všechna data (denní) pro historii, tak použijeme rok.txt.
   const url = (year === currentYear) 
     ? `https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt`
     : `https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/rok.txt?rok=${year}`;
@@ -61,9 +66,9 @@ async function fetchCnbYearlyRates(year: number): Promise<CnbRateRow[]> {
     }
   }
 
-  // Speciální případ: Pokud rok.txt pro aktuální rok vrátí formát "Datum|1 AUD|1 BRL|..."
+  // Speciální případ: Formát "Datum|1 AUD|1 BRL|..." (časová řada / rok.txt)
   if (headerIdx === -1 && norm(lines[0]).startsWith("datum|")) {
-    return parseCnbPivotFormat(lines);
+    return parseCnbTimeSeries(lines);
   }
 
   if (headerIdx === -1) {
@@ -105,45 +110,57 @@ async function fetchCnbYearlyRates(year: number): Promise<CnbRateRow[]> {
 }
 
 /**
- * Zpracuje formát kde sloupce jsou měny a řádky dny (použije poslední dostupný den).
- * Záhlaví: Datum|1 AUD|1 BRL|1 CAD|...
+ * Zpracuje časovou řadu (rok.txt), kde sloupce jsou měny a řádky dny.
+ * Záhlaví: Datum|1 AUD|1 BGN|...
+ * Datové řádky: 03.01.2022|15.868|12.721|...
  */
-function parseCnbPivotFormat(lines: string[]): CnbRateRow[] {
+function parseCnbTimeSeries(lines: string[]): CnbRateRow[] {
   const headerCols = lines[0].split("|");
-  const dataCols = lines[lines.length - 1].split("|"); // Poslední (nejnovější) řádek
+  const allRates: CnbRateRow[] = [];
 
-  if (headerCols.length !== dataCols.length) {
-    throw new Error("Pivot formát ČNB: Počet sloupců v záhlaví a datech nesouhlasí.");
-  }
+  for (let lineIdx = 1; lineIdx < lines.length; lineIdx++) {
+    const dataCols = lines[lineIdx].split("|");
+    if (dataCols.length < 2) continue;
 
-  const rows: CnbRateRow[] = [];
-  // Od indexu 1 (přeskakujeme 'Datum')
-  for (let i = 1; i < headerCols.length; i++) {
-    const header = headerCols[i].trim(); // např. "1 AUD" nebo "100 HUF"
-    const valStr = dataCols[i].trim().replace(",", ".");
-    const rateRaw = parseFloat(valStr);
-    
-    if (isNaN(rateRaw)) continue;
+    const dateStr = dataCols[0].trim();
+    const dateParts = dateStr.split(".");
+    if (dateParts.length !== 3) continue;
 
-    // Rozdělíme "100 HUF" na množství a kód
-    const parts = header.split(/\s+/);
-    let amount = 1;
-    let code = header;
-    
-    if (parts.length >= 2) {
-      amount = parseFloat(parts[0]) || 1;
-      code = parts[1].toUpperCase();
-    } else {
-      code = header.toUpperCase();
+    const day = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]);
+    const year = parseInt(dateParts[2]);
+
+    // Od indexu 1 (přeskakujeme 'Datum')
+    // Používáme Math.min k ochraně před nekonzistentními řádky (např. prázdné sloupce na konci)
+    for (let i = 1; i < Math.min(headerCols.length, dataCols.length); i++) {
+      const header = headerCols[i].trim();
+      const valStr = dataCols[i].trim().replace(",", ".");
+      if (valStr === "" || valStr === "-") continue;
+
+      const rateRaw = parseFloat(valStr);
+      if (isNaN(rateRaw)) continue;
+
+      // Rozdělíme "100 HUF"
+      const meta = header.split(/\s+/);
+      let amount = 1;
+      let code = header;
+      if (meta.length >= 2) {
+        amount = parseFloat(meta[0]) || 1;
+        code = meta[1].toUpperCase();
+      } else {
+        code = header.toUpperCase();
+      }
+
+      allRates.push({
+        code,
+        amount,
+        rate: rateRaw / amount,
+        month,
+        day
+      });
     }
-
-    rows.push({
-      code,
-      amount,
-      rate: rateRaw / amount
-    });
   }
-  return rows;
+  return allRates;
 }
 
 
@@ -176,54 +193,94 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Chyba při stahování z ČNB: ${e.message}` }, { status: 502 });
     }
 
-    const cnbMap = new Map(cnbRates.map(r => [r.code, r]));
-    const results: { code: string; rate: number | null; status: string }[] = [];
+    const results = { inserted: 0, updated: 0, skipped: 0 };
+    
+    // Načteme všechny existující kurzy pro tento rok, abychom nemuseli dělat tisíce findFirst
+    const existingRates = await db.exchangeRate.findMany({
+      where: { year: targetYear }
+    });
 
-    for (const currency of activeCurrencies) {
-      const cnbRow = cnbMap.get(currency.code);
-      if (!cnbRow) {
-        results.push({ code: currency.code, rate: null, status: "Měna nenalezena v ČNB" });
+    // Vytvoříme mapu pro rychlé vyhledávání: "CODE-MONTH-DAY" -> id
+    const existingMap = new Map<string, string>();
+    existingRates.forEach((r: any) => {
+      const key = `${r.currencyCode}-${r.month || 'null'}-${r.day || 'null'}`;
+      existingMap.set(key, r.id);
+    });
+
+    // Procházíme CNB data
+    for (const cnbRow of cnbRates) {
+      const currency = activeCurrencies.find((c: any) => c.code === cnbRow.code);
+      if (!currency) {
+        results.skipped++;
         continue;
       }
 
-      // Hledáme existující záznam (findFirst místo findUnique umožní lehčí práci s null v composite indexu)
-      const existing = await db.exchangeRate.findFirst({
-        where: {
-          currencyCode: currency.code,
-          year: targetYear,
-          month: null,
-        }
-      });
+      const key = `${currency.code}-${cnbRow.month || 'null'}-${cnbRow.day || 'null'}`;
+      const existingId = existingMap.get(key);
 
-      if (existing) {
+      if (existingId) {
         await db.exchangeRate.update({
-          where: { id: existing.id },
+          where: { id: existingId },
           data: {
             rateToCzk: cnbRow.rate,
             source: "CNB",
             updatedAt: new Date(),
           }
         });
+        results.updated++;
       } else {
         await db.exchangeRate.create({
           data: {
             currencyCode: currency.code,
             year: targetYear,
-            month: null, // roční průměr
+            month: cnbRow.month || null,
+            day: cnbRow.day || null,
             rateToCzk: cnbRow.rate,
             source: "CNB",
           }
         });
+        results.inserted++;
       }
+    }
 
-      results.push({ code: currency.code, rate: cnbRow.rate, status: "OK" });
+    const uniqueDays = new Set(cnbRates.filter(r => r.day).map(r => `${r.day}.${r.month}`));
+    
+    // BACK-PROPAGATION: Calculate and save YEARLY AVERAGE (month=null, day=null)
+    // base on all imported daily rates for this year
+    const codes = new Set(cnbRates.map(r => r.code));
+    for (const code of codes) {
+      const currency = activeCurrencies.find((c: any) => c.code === code);
+      if (!currency) continue;
+
+      const dailyForCode = cnbRates.filter(r => r.code === code && r.day !== null);
+      if (dailyForCode.length > 0) {
+        const avgRate = dailyForCode.reduce((sum, r) => sum + r.rate, 0) / dailyForCode.length;
+        
+        const existingYearly = await db.exchangeRate.findFirst({
+          where: { currencyCode: code, year: targetYear, month: null, day: null }
+        });
+
+        if (existingYearly) {
+          await db.exchangeRate.update({
+            where: { id: existingYearly.id },
+            data: { rateToCzk: avgRate, source: "CNB_CALC", updatedAt: new Date() }
+          });
+        } else {
+          await db.exchangeRate.create({
+            data: { currencyCode: code, year: targetYear, month: null, day: null, rateToCzk: avgRate, source: "CNB_CALC" }
+          });
+        }
+      }
     }
 
     return NextResponse.json({
+      ok: true,
+      message: `Roční kurzy úspěšně naimportovány.`,
       year: targetYear,
-      imported: results.filter(r => r.status === "OK").length,
-      skipped: results.filter(r => r.status !== "OK").length,
-      results,
+      inserted: results.inserted,
+      updated: results.updated,
+      skipped: results.skipped,
+      days: uniqueDays.size || 1,
     });
 
   } catch (err: any) {

@@ -36,51 +36,75 @@ const FALLBACK_RATES_TO_CZK: Record<string, number> = {
   SKK: 1,
 };
 
-// Načte kurzy z DB — vrátí mapu: currency -> year -> rate
-type YearRateMap = Map<string, Map<number, number>>;
+// Načte kurzy z DB — vrátí mapu: "CURRENCY-YYYY-MM-DD" nebo "CURRENCY-YYYY-MM" nebo "CURRENCY-YYYY" -> rate
+type RatesMap = Map<string, number>;
 
-async function loadDbRates(): Promise<YearRateMap> {
-  const rates = await (prisma as any).exchangeRate.findMany({
-    where: { month: null }, // jen roční průměry
-    orderBy: { year: "asc" },
-  });
-
-  const map: YearRateMap = new Map();
+async function loadDbRates(): Promise<RatesMap> {
+  const rates = await (prisma as any).exchangeRate.findMany();
+  const map: RatesMap = new Map();
   for (const r of rates) {
-    if (!map.has(r.currencyCode)) map.set(r.currencyCode, new Map());
-    map.get(r.currencyCode)!.set(r.year, Number(r.rateToCzk));
+    const keyParts = [r.currencyCode.toUpperCase(), r.year];
+    if (r.month) keyParts.push(r.month);
+    if (r.day) keyParts.push(r.day);
+    map.set(keyParts.join("-"), Number(r.rateToCzk));
   }
   return map;
 }
 
-/** Najde nejlepší kurz pro daný rok — přesný, nebo nejbližší starší, nebo fallback */
-function getRateForYear(dbRates: YearRateMap, currency: string, year: number): number {
-  if (currency === "CZK") return 1;
-  const currRates = dbRates.get(currency.toUpperCase());
-  if (currRates && currRates.size > 0) {
-    if (currRates.has(year)) return currRates.get(year)!;
-    const older = [...currRates.keys()].filter(y => y <= year).sort((a, b) => b - a);
-    if (older.length > 0) return currRates.get(older[0])!;
-    const newer = [...currRates.keys()].sort((a, b) => a - b);
-    if (newer.length > 0) return currRates.get(newer[0])!;
+/** Najde nejlepší kurz pro dané datum — denní, měsíční průměr, nebo roční průměr */
+function getRateForDate(dbRates: RatesMap, currency: string, date: Date, useAverageOnly = false): number {
+  const c = currency.toUpperCase();
+  if (c === "CZK") return 1;
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+
+  if (!useAverageOnly) {
+    // 1. Zkusíme přesný den
+    const dayRate = dbRates.get(`${c}-${y}-${m}-${d}`);
+    if (dayRate) return dayRate;
+
+    // 2. Zkusíme měsíční průměr
+    const monthRate = dbRates.get(`${c}-${y}-${m}`);
+    if (monthRate) return monthRate;
   }
-  return FALLBACK_RATES_TO_CZK[currency.toUpperCase()] ?? 1;
+
+  // 3. Zkusíme roční průměr
+  const yearRate = dbRates.get(`${c}-${y}`);
+  if (yearRate) return yearRate;
+
+  // 4. Fallback na pevné kurzy
+  return FALLBACK_RATES_TO_CZK[c] ?? 1;
 }
 
 export async function GET(_req: NextRequest) {
   try {
     const user = await requireAuth();
     
-    const services = await (prisma.service as any).findMany({
+    // 1. Služby, které VLASTNÍM (včetně těch archivovaných pro historii)
+    const ownedServices = await (prisma.service as any).findMany({
       where: { ownerId: user.id },
       include: {
         priceIntervals: { orderBy: { startDate: "asc" } },
+        accessGrants: { where: { status: "ACTIVE" } },
       }
-    }) as ServiceWithIntervals[];
+    }) as (ServiceWithIntervals & { accessGrants: any[] })[];
 
-    // Načteme kurzy z DB jednou dopředu
+    // 2. Služby sdílené SE MNOU (kde jsem příjemcem a platím)
+    const sharedWithMe = await (prisma.accessGrant as any).findMany({
+      where: { granteeId: user.id, status: "ACTIVE" },
+      include: {
+        service: {
+          include: {
+            priceIntervals: { orderBy: { startDate: "asc" } },
+            accessGrants: { where: { status: "ACTIVE" } },
+          }
+        }
+      }
+    });
+
+    // Sjednotíme do jednoho seznamu pro výpočet
     const dbRates = await loadDbRates();
-
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -126,23 +150,52 @@ export async function GET(_req: NextRequest) {
         default: monthlyRaw = rawPrice;
       }
 
-      // Convert to CZK using year-specific rate from DB
-      const rate = getRateForYear(dbRates, service.currency, date.getFullYear());
-      return monthlyRaw * rate;
+      // Convert to CZK
+      // Pro minulé měsíce zkusíme nejlepší dostupný kurz (historický)
+      // Pro aktuální/budoucí měsíc použijeme průměr (odhad)
+      const now = new Date();
+      const isPast = date.getFullYear() < now.getFullYear() || 
+                     (date.getFullYear() === now.getFullYear() && date.getMonth() < now.getMonth());
+      
+      const rate = getRateForDate(dbRates, service.currency, date, !isPast);
+      let monthlyCzk = monthlyRaw * rate;
+
+      // --- Logika rozdělení nákladů ---
+      const isOwner = service.ownerId === user.id;
+      const activeGrants = (service as any).accessGrants || [];
+      const slotsCount = 1 + activeGrants.length; // Majitel + aktivní účastníci
+
+      if (isOwner) {
+        // Pokud jsem majitel a sdílím, moje část je jen zlomek (pokud je pricingModel EQUAL_SPLIT)
+        // Pro zjednodušení bereme že všechny aktivní granty jsou rovným dílem pokud neřeknou jinak
+        // Ale v Cestooy majitel platí zbytek. 
+        // Pokud jsou 2 další lidi a je to Equal Split, majitel platí 1/3.
+        return monthlyCzk / slotsCount;
+      } else {
+        // Pokud jsem příjemce, moje část je pevně daná nebo podíl
+        const myGrant = (service as any).accessGrants?.find((g: any) => g.granteeId === user.id);
+        if (myGrant?.pricingModel === "FIXED") {
+          return Number(myGrant.fixedAmount || 0) * rate;
+        }
+        return monthlyCzk / slotsCount;
+      }
     };
 
 
-    // Iterate through months from the earliest service start date to now
+    // Start from the beginning of that month
+    const allRelevantServices = [
+      ...ownedServices,
+      ...sharedWithMe.map((g: any) => ({ ...g.service, sharedGrant: g }))
+    ];
+
     let earliestDate = new Date();
-    services.forEach((s: ServiceWithIntervals) => {
-      if (s.startDate && new Date(s.startDate) < earliestDate) {
-        earliestDate = new Date(s.startDate);
-      } else if (new Date(s.createdAt) < earliestDate) {
-        earliestDate = new Date(s.createdAt);
+    allRelevantServices.forEach((s: any) => {
+      const startCandidate = s.startDate || s.createdAt;
+      if (startCandidate && new Date(startCandidate) < earliestDate) {
+        earliestDate = new Date(startCandidate);
       }
     });
 
-    // Start from the beginning of that month
     let iterDate = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
     
     while (iterDate <= now) {
@@ -153,35 +206,34 @@ export async function GET(_req: NextRequest) {
         monthlyStats[monthKey] = { total: 0, byCategory: {} };
       }
 
-      services.forEach((service: ServiceWithIntervals) => {
-        // Check if service was active during iterDate
+      allRelevantServices.forEach((service: any) => {
         const startRaw = service.startDate || service.createdAt;
         const start = new Date(startRaw);
         
         const isArchived = service.status === "ARCHIVED" || service.isTerminated;
         const archivedDate = service.archivedAt ? new Date(service.archivedAt) : null;
+        
+        const iterMonthStart = new Date(iterDate.getFullYear(), iterDate.getMonth(), 1);
+        const archivedMonthStart = archivedDate ? new Date(archivedDate.getFullYear(), archivedDate.getMonth(), 1) : null;
 
-        // Pokud je archivováno ale chybí archivedAt, bereme jako neaktivní (neznámé datum odstranění)
-        const wasActive = iterDate >= new Date(start.getFullYear(), start.getMonth(), 1) && 
-                          (!isArchived || (archivedDate !== null && iterDate <= archivedDate));
+        const wasActive = iterMonthStart >= new Date(start.getFullYear(), start.getMonth(), 1) && 
+                          (!isArchived || (archivedMonthStart !== null && iterMonthStart < archivedMonthStart));
 
         if (wasActive) {
-          const monthlyPrice = getPriceForDate(service, iterDate);
+          const userPartMonthlyPrice = getPriceForDate(service, iterDate);
           
-          monthlyStats[monthKey].total += monthlyPrice;
-          yearlyStats[year] = (yearlyStats[year] || 0) + monthlyPrice;
-          lifetimeTotal += monthlyPrice;
+          monthlyStats[monthKey].total += userPartMonthlyPrice;
+          yearlyStats[year] = (yearlyStats[year] || 0) + userPartMonthlyPrice;
+          lifetimeTotal += userPartMonthlyPrice;
 
-          // Category stats
           const cat = service.category || "Ostatní";
-          monthlyStats[monthKey].byCategory[cat] = (monthlyStats[monthKey].byCategory[cat] || 0) + monthlyPrice;
-          categoryRankings[cat] = (categoryRankings[cat] || 0) + monthlyPrice;
+          monthlyStats[monthKey].byCategory[cat] = (monthlyStats[monthKey].byCategory[cat] || 0) + userPartMonthlyPrice;
+          categoryRankings[cat] = (categoryRankings[cat] || 0) + userPartMonthlyPrice;
 
-          // Service rankings
           if (!serviceRankings[service.id]) {
             serviceRankings[service.id] = { name: service.serviceName, total: 0 };
           }
-          serviceRankings[service.id].total += monthlyPrice;
+          serviceRankings[service.id].total += userPartMonthlyPrice;
         }
       });
 
@@ -189,8 +241,8 @@ export async function GET(_req: NextRequest) {
       iterDate.setMonth(iterDate.getMonth() + 1);
     }
 
-    // Current service monthly costs (for ranking by actual monthly expense)
-    const currentServiceCosts = services
+    // Current service monthly costs
+    const currentServiceCosts = allRelevantServices
       .filter(s => s.status !== "ARCHIVED" && !s.isTerminated && s.billingCycle !== "ONEOFF")
       .map(s => ({
         id: s.id,

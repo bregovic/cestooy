@@ -4,7 +4,7 @@ import { cache } from "react";
 
 export const getSession = cache(async () => {
   const cookieStore = await cookies();
-  const token = cookieStore.get("palalate_session")?.value;
+  const token = cookieStore.get("cestooy_session")?.value;
   if (!token) return null;
 
   const session = await prisma.session.findUnique({
@@ -43,5 +43,5 @@ export async function requireAuth() {
   return user;
 }
 
-export const SESSION_COOKIE = "palalate_session";
+export const SESSION_COOKIE = "cestooy_session";
 export const SESSION_DURATION_DAYS = 30;

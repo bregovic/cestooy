@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 /* ─── CSS RESET & BASE ─────────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -8,37 +8,27 @@
 }
 
 :root {
-  /* 🎨 Brand paleta – Modrá (Sapphire) */
-  --brand-50:  #eff6ff;
-  --brand-100: #dbeafe;
-  --brand-200: #bfdbfe;
-  --brand-300: #93c5fd;
-  --brand-400: #60a5fa;
-  --brand-500: #3b82f6;
-  --brand-600: #2563eb;
-  --brand-700: #1d4ed8;
-  --brand-800: #1e40af;
-  --brand-900: #1e3a8a;
+  /* 🎨 Cestuy Palette */
+  --brand-500: #305555;  /* Svetle zelena */
+  --brand-600: #1E3A3A;  /* Tmave zelena */
+  --brand-700: #162B2B;
+  
+  --accent-500: #F9A521; /* Tepla oranzova */
+  --accent-400: #FBBD5E;
+  --accent-600: #D88E1C;
 
-  --accent-500: #10b981;
-  --accent-400: #34d399;
-  --accent-600: #059669;
-
-  --success-400: #34d399;
   --success-500: #10b981;
-  --warning-400: #fbbf24;
   --warning-500: #f59e0b;
-  --danger-400:  #f87171;
   --danger-500:  #ef4444;
 
   /* ⚪ Light theme barvy */
-  --bg-base:       #f8fafc;
+  --bg-base:       #F5F5EA; /* Kremova bila */
   --bg-surface:    #ffffff;
-  --bg-elevated:   #f1f5f9;
+  --bg-elevated:   #ededdf;
   --bg-card:       #ffffff;
   --bg-input:      #ffffff;
-  --bg-hover:      #f1f5f9;
-  --bg-glass:      rgba(255, 255, 255, 0.8);
+  --bg-hover:      #ededdf;
+  --bg-glass:      rgba(245, 245, 234, 0.8);
 
   /* 📝 Text (Light Mode) */
   --text-primary:   #0f172a;
@@ -61,8 +51,8 @@
   --shadow-sm:   0 1px 2px rgba(0,0,0,0.05);
   --shadow-md:   0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg:   0 12px 24px rgba(0,0,0,0.12);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.08); /* Blue glow */
-  --shadow-glow-strong: 0 0 30px rgba(59, 130, 246, 0.15);
+  --shadow-glow: 0 0 20px rgba(249, 165, 33, 0.08); /* Orange glow */
+  --shadow-glow-strong: 0 0 30px rgba(249, 165, 33, 0.15);
 
   --radius-sm:   6px;
   --radius-md:   10px;
@@ -75,8 +65,8 @@
   --transition-slow:   400ms ease;
 
   /* 🔤 Typography */
-  --font-sans: 'Inter', 'DM Sans', sans-serif;
-  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-sans: 'Poppins', sans-serif;
+  --font-display: 'Poppins', sans-serif;
 }
 
 html {
@@ -680,9 +670,9 @@ code {
 }
 
 .badge-blue {
-  background: rgba(6, 182, 212, 0.15);
-  color: var(--accent-400);
-  border-color: rgba(6, 182, 212, 0.2);
+  background: rgba(48, 85, 85, 0.15);
+  color: var(--brand-500);
+  border-color: rgba(48, 85, 85, 0.2);
 }
 
 .badge-green {

@@ -636,7 +636,23 @@ function CurrenciesTab() {
                 {importResult.details && <div className="mt-2 text-xs font-mono opacity-80">{importResult.details}</div>}
               </div>
             ) : (
-              `V pořádku: Importováno ${importResult.imported} kurzů pro rok ${importResult.year}.`
+              <div className="flex flex-col gap-2">
+                 <div className="font-bold">✅ {importResult.message} ({importResult.year})</div>
+                 <div className="grid grid-cols-3 gap-3 mt-1">
+                    <div className="bg-white/50 p-2 rounded-lg border border-green-100">
+                      <div className="text-[10px] uppercase font-bold text-green-800">Nových</div>
+                      <div className="text-lg font-bold">{importResult.inserted}</div>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded-lg border border-green-100">
+                      <div className="text-[10px] uppercase font-bold text-green-800">Aktualizováno</div>
+                      <div className="text-lg font-bold">{importResult.updated}</div>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded-lg border border-green-100">
+                      <div className="text-[10px] uppercase font-bold text-green-800">Pracovních dní</div>
+                      <div className="text-lg font-bold">{importResult.days}</div>
+                    </div>
+                 </div>
+              </div>
             )}
           </div>
         )}
@@ -815,9 +831,9 @@ function InstallPwaCard() {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs text-muted">Můžete si nainstalovat aplikaci Palalate na plochu pro rychlý přístup.</p>
+      <p className="text-xs text-muted">Můžete si nainstalovat aplikaci Cestooy na plochu pro rychlý přístup.</p>
       <button className="btn btn-secondary btn-sm" disabled={!deferredPrompt} onClick={install}>
-        {deferredPrompt ? "📲 Instalovat Palalate" : "📦 Již nainstalováno nebo nepodporováno"}
+        {deferredPrompt ? "📲 Instalovat Cestooy" : "📦 Již nainstalováno nebo nepodporováno"}
       </button>
     </div>
   );

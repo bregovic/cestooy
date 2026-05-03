@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Palalate',
-    short_name: 'Palalate',
+    name: 'Cestooy',
+    short_name: 'Cestooy',
     description: 'Bezpečná platforma pro evidenci digitálních předplatných a řízené sdílení.',
     start_url: '/dashboard',
     display: 'standalone',
