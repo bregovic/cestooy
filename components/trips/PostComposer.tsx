@@ -118,21 +118,22 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex gap-2 mb-6 p-1 bg-brand-50 rounded-2xl">
+    <div className="animate-fade-in space-y-6">
+      {/* Tabs Switcher - Clean & Professional */}
+      <div className="flex p-1.5 bg-brand-50/50 rounded-2xl border border-brand-100/20 max-w-sm">
         {(["TEXT", "PHOTO", "PLACE"] as const).map((m) => (
           <button 
             key={m}
             type="button" 
             onClick={() => setMode(m)}
-            className={`flex-1 py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] transition-all ${mode === m ? "bg-white text-brand-950 shadow-sm" : "text-brand-400 hover:text-brand-600"}`}
+            className={`flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 ${mode === m ? "bg-white text-brand-950 shadow-md" : "text-brand-400 hover:text-brand-600"}`}
           >
             {m === "TEXT" ? "Text" : m === "PHOTO" ? "Foto" : "Místo"}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {mode === "PLACE" && (
           <div className="space-y-4 animate-slide-up">
             <div className="relative">
