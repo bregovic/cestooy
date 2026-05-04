@@ -7,6 +7,19 @@
   padding: 0;
 }
 
+button, input, textarea, select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 :root {
   /* 🎨 Cestuy Palette */
   --brand-500: #305555;  /* Svetle zelena */
@@ -586,14 +599,12 @@ code {
 .form-select,
 .form-textarea {
   background: var(--bg-surface);
-  border: 1.5px solid #e2e8f0;
   border-radius: var(--radius-lg);
   padding: 12px 16px;
   font-family: var(--font-sans);
   font-size: 0.95rem;
   color: var(--text-primary);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
   width: 100%;
 }
 
@@ -605,9 +616,8 @@ code {
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
-  border-color: var(--brand-400);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
   background: var(--bg-surface);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05);
 }
 
 .form-textarea { resize: vertical; min-height: 100px; }

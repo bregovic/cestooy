@@ -35,8 +35,8 @@ export default async function DashboardPage() {
     }).catch(() => []);
 
     return (
-      <div className="animate-fade-in max-w-[1400px] mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
+      <div className="animate-fade-in max-w-[1200px] mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pt-8">
           
           {/* Main Feed Column */}
           <div className="lg:col-span-8 space-y-8">

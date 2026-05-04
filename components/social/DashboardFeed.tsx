@@ -50,11 +50,11 @@ export default function DashboardFeed() {
 
   if (posts.length === 0) {
     return (
-      <div className="card py-32 text-center bg-white/50 backdrop-blur-xl border-dashed border-2 border-brand-200" style={{ borderRadius: '3rem' }}>
-        <div className="text-8xl mb-6 grayscale opacity-40">🌵</div>
-        <h2 className="text-2xl font-black text-brand-900 uppercase tracking-widest">Tvá osa je prázdná</h2>
-        <p className="text-secondary mt-3 max-w-md mx-auto font-medium">
-          Zaznamenej svůj první check-in nebo se podívej, co dělají tví přátelé!
+      <div className="py-24 text-center bg-white rounded-[3rem] border border-brand-100/50 shadow-sm animate-fade-in">
+        <div className="text-6xl mb-8 grayscale opacity-20">🌍</div>
+        <h2 className="text-sm font-black text-brand-900 uppercase tracking-[0.3em]">Tvá osa čeká na první příběh</h2>
+        <p className="text-[11px] text-brand-400 mt-4 max-w-xs mx-auto font-bold uppercase tracking-wider leading-relaxed">
+          Zaznamenej svůj první check-in nebo fotku a začni svou cestu!
         </p>
       </div>
     );
