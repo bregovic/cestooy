@@ -202,11 +202,6 @@ export default function TripDetailPage() {
                 })}
               </div>
             )}
->
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
