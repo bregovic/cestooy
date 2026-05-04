@@ -36,43 +36,61 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card animate-slide-up">
-        <div className="auth-logo" style={{ marginBottom: 40 }}>
-          <Image src="/logo.png" alt="Cestooy" width={240} height={120} style={{ margin: "0 auto", width: "auto", height: "auto", maxWidth: "100%" }} />
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--bg-gradient)]">
+      <div className="glass-panel w-full max-w-md p-10 animate-fade-in">
+        
+        <div className="flex flex-col items-center mb-10">
+          <Image src="/logo.png" alt="Cestooy" width={180} height={60} className="mb-6 h-auto w-auto" priority />
+          <h2 className="text-xl font-bold tracking-tight text-brand-950">Zapomenuté heslo</h2>
+          <p className="text-[11px] text-brand-400 font-bold uppercase tracking-[0.2em] mt-2 text-center">Pošleme ti záchranný odkaz</p>
         </div>
 
-        <h2 style={{ marginBottom: 12, textAlign: "center" }}>Zapomenuté heslo</h2>
-        <p className="text-center text-muted mb-6" style={{ fontSize: "0.9rem" }}>
-          Zadej svůj email a my ti pošleme odkaz pro změnu hesla.
-        </p>
-
         {sent ? (
-          <div className="text-center">
-            <div className="alert alert-success mb-6">
-              ✅ Instrukce byly odeslány na tvůj email (pokud u nás máš účet).
+          <div className="text-center animate-slide-up">
+            <div className="mb-8 p-6 bg-green-50 rounded-[2rem] border border-green-100">
+              <div className="text-3xl mb-4">📧</div>
+              <p className="text-xs font-bold text-green-700 leading-relaxed uppercase tracking-wider">
+                Instrukce byly odeslány na tvůj email. Zkontroluj si schránku!
+              </p>
             </div>
-            <Link href="/login" className="btn btn-secondary w-full">Zpět na přihlášení</Link>
+            <Link href="/login" className="block w-full bg-brand-950 text-white py-4 rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-950/20 hover:scale-[1.02] transition-all">
+              Zpět na přihlášení
+            </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            {error && <div className="alert alert-error mb-4">{error}</div>}
-            <div className="form-group mb-6">
-              <label className="form-label">Email</label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-[11px] font-bold">
+                ⚠️ {error}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-brand-500/60 ml-1">
+                Tvůj registrovaný email
+              </label>
               <input 
                 type="email" 
-                className="form-input" 
+                className="w-full bg-brand-50/30 border border-brand-100/50 rounded-2xl py-4 px-6 text-sm focus:bg-white focus:ring-4 focus:ring-brand-500/5 transition-all outline-none" 
                 placeholder="vas@email.cz" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
               />
             </div>
-            <button type="submit" className="btn btn-primary w-full btn-lg" disabled={loading}>
+
+            <button 
+              type="submit" 
+              className="w-full bg-brand-950 text-white py-4 rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-950/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+              disabled={loading}
+            >
               {loading ? "Odesílám..." : "Poslat odkaz →"}
             </button>
-            <div className="mt-6 text-center">
-              <Link href="/login" className="text-sm text-muted hover:text-brand">Zpět na přihlášení</Link>
+            
+            <div className="text-center">
+              <Link href="/login" className="text-[10px] font-bold text-brand-400 uppercase tracking-widest hover:text-brand-950 transition-colors">
+                Zpět na přihlášení
+              </Link>
             </div>
           </form>
         )}
