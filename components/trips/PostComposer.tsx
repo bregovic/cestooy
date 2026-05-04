@@ -117,7 +117,7 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
       <div className="flex gap-2 mb-6 p-1 bg-brand-50 rounded-2xl">
         <button 
           type="button" 
-          onClick={() => setMode("BLOG") || setLocationName("")}
+          onClick={() => { setMode("BLOG"); setLocationName(""); }}
           className={`flex-1 py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] transition-all ${mode === "BLOG" ? "bg-white text-brand-950 shadow-sm" : "text-brand-400 hover:text-brand-600"}`}
         >
           Příspěvek
