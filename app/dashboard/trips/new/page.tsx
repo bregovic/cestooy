@@ -42,81 +42,83 @@ export default function NewTripPage() {
 
   return (
     <div className="page-content animate-fade-in max-w-2xl mx-auto">
-      <div className="mb-8">
-        <Link href="/dashboard" className="text-sm text-muted hover:text-brand-600 flex items-center gap-1 mb-4">
-          ← Zpět na přehled
+      <div className="mb-12">
+        <Link href="/dashboard/trips" className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-brand-600 flex items-center gap-2 mb-6">
+          ← Zpět na seznam akcí
         </Link>
-        <h1 className="text-3xl font-bold">Nový výlet 🎒</h1>
-        <p className="text-secondary mt-2">Založ si novou množinu zážitků a pozvi přátele.</p>
+        <h1 className="text-4xl font-black text-brand-950 uppercase tracking-tight">Nová Akce 📅</h1>
+        <p className="text-secondary mt-2 font-medium">Založ si ucelený příběh, sdílej blog a pozvi přátele do skupiny.</p>
       </div>
 
-      <div className="card shadow-xl p-8" style={{ borderRadius: 'var(--radius-2xl)' }}>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold ml-1">Název výletu</label>
+      <div className="card shadow-2xl p-10 bg-white/80 backdrop-blur-xl border border-white" style={{ borderRadius: '3rem' }}>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-brand-800 ml-2">Název akce</label>
             <input
               required
               type="text"
-              placeholder="Např. Itálie 2026, Víkend v kempu..."
-              className="input w-full"
+              placeholder="Např. Itálie 2026, Víkend na horách..."
+              className="input w-full p-6 bg-white/50 border-brand-50 rounded-2xl focus:bg-white transition-all text-lg font-bold"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold ml-1">Popis (volitelné)</label>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-brand-800 ml-2">Popis (volitelné)</label>
             <textarea
-              placeholder="O čem tento výlet bude?"
-              className="input w-full min-h-[100px] py-3"
+              placeholder="Krátce popiš, o čem tato akce bude..."
+              className="input w-full min-h-[120px] p-6 bg-white/50 border-brand-50 rounded-2xl focus:bg-white transition-all font-medium"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold ml-1">Od</label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-800 ml-2">Začátek</label>
               <input
                 type="date"
-                className="input w-full"
+                className="input w-full p-5 bg-white/50 border-brand-50 rounded-2xl focus:bg-white transition-all font-bold"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold ml-1">Do</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-800 ml-2">Konec</label>
               <input
                 type="date"
-                className="input w-full"
+                className="input w-full p-5 bg-white/50 border-brand-50 rounded-2xl focus:bg-white transition-all font-bold"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-muted rounded-xl">
+          <div className="flex items-center gap-4 p-6 bg-brand-50/50 rounded-3xl border border-brand-50">
             <input
               type="checkbox"
               id="isPublic"
-              className="w-5 h-5 rounded border-muted text-brand-600 focus:ring-brand-500"
+              className="w-6 h-6 rounded-lg border-brand-200 text-brand-600 focus:ring-brand-500"
               checked={formData.isPublic}
               onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
             />
-            <label htmlFor="isPublic" className="text-sm cursor-pointer">
-              <strong>Veřejný výlet</strong> – kdokoli s odkazem si bude moct prohlédnout tvůj blog.
+            <label htmlFor="isPublic" className="text-sm cursor-pointer font-medium text-brand-900 select-none">
+              <strong>Veřejná akce</strong> – kdokoli s odkazem uvidí tvůj blog.
             </label>
           </div>
 
-          <div className="pt-4">
+          <div className="pt-6">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn btn-primary w-full py-4 text-lg"
+              className="btn btn-primary w-full py-6 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-brand-200 hover:scale-[1.02] transition-all"
             >
-              {isSubmitting ? "Vytvářím..." : "Vytvořit výlet 🚀"}
+              {isSubmitting ? "Vytvářím..." : "Založit Akci 🚀"}
             </button>
           </div>
+        </form>
+      </div>
         </form>
       </div>
     </div>
