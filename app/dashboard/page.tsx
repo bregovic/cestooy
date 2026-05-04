@@ -186,8 +186,12 @@ export default async function DashboardPage() {
           {error.message}
         </pre>
         <div className="mt-8 flex gap-4">
-           <button onClick={() => window.location.reload()} className="btn btn-primary px-8 py-3 rounded-xl font-bold">Zkusit znovu 🔄</button>
-           <Link href="/dashboard/settings" className="btn btn-ghost px-8 py-3 rounded-xl font-bold">Nastavení ⚙️</Link>
+           <Link href="/dashboard" className="btn btn-primary px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-200">
+             Zkusit znovu 🔄
+           </Link>
+           <Link href="/dashboard/settings" className="btn btn-ghost px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest">
+             Nastavení ⚙️
+           </Link>
         </div>
       </div>
     );
