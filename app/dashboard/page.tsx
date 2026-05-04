@@ -149,11 +149,6 @@ export default async function DashboardPage() {
         </div>
       </div>
     );
-
-          </div>
-        </div>
-      </div>
-    );
   } catch (error: any) {
     if (error.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return (
