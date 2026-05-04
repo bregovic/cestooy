@@ -41,15 +41,22 @@ export async function POST(req: NextRequest) {
 }
 
 // GET /api/trips - Seznam mých výletů (vlastních i sdílených)
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth();
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
 
     const trips = await prisma.trip.findMany({
       where: {
-        OR: [
-          { ownerId: user.id },
-          { members: { some: { userId: user.id } } }
+        AND: [
+          {
+            OR: [
+              { ownerId: user.id },
+              { members: { some: { userId: user.id } } }
+            ]
+          },
+          status ? { status: status as any } : {}
         ]
       },
       include: {
@@ -60,7 +67,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" }
     });
 
-    return NextResponse.json(trips);
+    return NextResponse.json({ trips });
   } catch (err) {
     console.error("[Trips GET]", err);
     return NextResponse.json({ error: "Chyba při načítání výletů" }, { status: 500 });
