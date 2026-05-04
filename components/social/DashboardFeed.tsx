@@ -28,7 +28,8 @@ export default function DashboardFeed() {
     fetch("/api/social/posts")
       .then(res => res.json())
       .then(data => {
-        setPosts(data);
+        // API returns { posts: [...] }
+        setPosts(data.posts || []);
         setLoading(false);
       })
       .catch(err => {
@@ -49,100 +50,141 @@ export default function DashboardFeed() {
 
   if (posts.length === 0) {
     return (
-      <div className="card py-20 text-center" style={{ borderRadius: '2.5rem' }}>
-        <div className="text-6xl mb-4">📭</div>
-        <h3 className="text-xl font-bold">Tvá zeď je zatím prázdná</h3>
-        <p className="text-secondary mt-2">Sleduj své přátele nebo přidej svůj první zážitek!</p>
+      <div className="card py-32 text-center bg-white/50 backdrop-blur-xl border-dashed border-2 border-brand-200" style={{ borderRadius: '3rem' }}>
+        <div className="text-8xl mb-6 grayscale opacity-40">🌵</div>
+        <h2 className="text-2xl font-black text-brand-900 uppercase tracking-widest">Tvá osa je prázdná</h2>
+        <p className="text-secondary mt-3 max-w-md mx-auto font-medium">
+          Zaznamenej svůj první check-in nebo se podívej, co dělají tví přátelé!
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-10">
-      {posts.map((post) => (
-        <div key={post.id} className="card shadow-xl overflow-hidden group border-none hover:shadow-2xl transition-shadow duration-500" style={{ borderRadius: '2.5rem' }}>
-          <div className="p-6 md:p-8 flex flex-col gap-6">
-            
-            {/* Post Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl overflow-hidden bg-brand-100 flex items-center justify-center shadow-inner ring-4 ring-brand-50">
-                  {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold">{(post.author.name?.[0] || "?")}</span>}
-                </div>
-                <div>
-                  <div className="font-bold text-lg leading-tight">{post.author.name}</div>
-                  <div className="text-[10px] text-secondary flex items-center gap-1 uppercase tracking-wider font-bold mt-1">
-                    <span>{new Date(post.createdAt).toLocaleDateString('cs-CZ')}</span>
-                    {post.trip && (
-                      <>
-                        <span className="mx-1 opacity-30">•</span>
-                        <Link href={`/dashboard/trips/${post.trip.id}`} className="text-brand-600 hover:underline">
-                          🚢 {post.trip.title}
-                        </Link>
-                      </>
-                    )}
-                  </div>
+    <div className="relative pl-8 md:pl-16 space-y-12 pb-20">
+      {/* Vertical Timeline Line */}
+      <div className="absolute left-[15px] md:left-[31px] top-4 bottom-0 w-1.5 bg-gradient-to-b from-brand-300 via-brand-100 to-transparent rounded-full opacity-50" />
+
+      {posts.map((post, index) => {
+        const date = new Date(post.createdAt);
+        const dateStr = date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+        
+        const showDate = index === 0 || 
+          new Date(posts[index-1].createdAt).toDateString() !== date.toDateString();
+
+        return (
+          <div key={post.id} className="relative animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
+            {/* Date Badge */}
+            {showDate && (
+              <div className="absolute -left-8 md:-left-16 top-[-48px] mb-8 z-20">
+                <div className="bg-brand-950 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl ring-4 ring-white inline-block">
+                  {dateStr}
                 </div>
               </div>
-              <button className="btn btn-ghost btn-icon opacity-40 hover:opacity-100 transition-opacity">•••</button>
+            )}
+
+            {/* Timeline Indicator Dot */}
+            <div className="absolute -left-[28px] md:-left-[44px] top-8 w-7 h-7 bg-white rounded-full border-4 border-brand-500 shadow-xl z-10 transition-transform hover:scale-125" />
+
+            {/* Post Card - Premium Glassmorphism style */}
+            <div className="card group bg-white/80 backdrop-blur-xl border border-white ring-1 ring-brand-50 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-visible" style={{ borderRadius: '3rem' }}>
+              <div className="p-8 md:p-10">
+                
+                {/* Header: Author & Blog Link */}
+                <div className="flex items-start justify-between mb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-[1.5rem] overflow-hidden bg-brand-100 shadow-inner ring-4 ring-white group-hover:rotate-3 transition-transform">
+                      {post.author.avatar ? (
+                        <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-black text-2xl text-brand-600">
+                          {post.author.name[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-black text-xl text-brand-950 tracking-tight">{post.author.name}</h3>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-[10px] font-black text-brand-500 uppercase tracking-widest">{timeStr}</span>
+                        {post.trip && (
+                          <Link href={`/dashboard/trips/${post.trip.id}`} className="bg-brand-50 text-brand-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-brand-950 hover:text-white transition-all">
+                             🚢 {post.trip.title}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visit Blog Button - only for others or if blog exists */}
+                  <button className="hidden md:flex btn bg-brand-50 text-brand-900 border-none px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-950 hover:text-white transition-all shadow-sm">
+                    Blog Přátel →
+                  </button>
+                </div>
+
+                {/* Content Area */}
+                <div className="space-y-6">
+                  {post.locationName && (
+                    <div className="inline-flex items-center gap-3 px-5 py-3 bg-brand-50 rounded-2xl border border-brand-100 shadow-inner group-hover:scale-105 transition-transform">
+                      <span className="text-2xl">📍</span>
+                      <span className="text-sm font-bold text-brand-900">{post.locationName}</span>
+                    </div>
+                  )}
+
+                  {post.content && (
+                    <div className="text-lg leading-relaxed text-brand-950 font-medium whitespace-pre-wrap opacity-90">
+                      {post.content}
+                    </div>
+                  )}
+
+                  {/* Media Grid */}
+                  {post.mediaUrls?.length > 0 && (
+                    <div className={`grid gap-4 ${post.mediaUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {post.mediaUrls.map((url, i) => (
+                        <div key={i} className="rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/20 aspect-video group/img">
+                          <img 
+                            src={url} 
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110" 
+                            alt="Moment" 
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Interaction Footer */}
+                <div className="mt-10 pt-8 border-t border-brand-50 flex items-center justify-between">
+                  <div className="flex gap-10">
+                    <button className="flex items-center gap-3 group/btn">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover/btn:bg-red-50 transition-all">
+                        <span className="text-2xl group-hover/btn:scale-125 transition-transform grayscale hover:grayscale-0">❤️</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-brand-950">24</span>
+                        <span className="text-[9px] font-black text-secondary uppercase tracking-widest">Líbí se</span>
+                      </div>
+                    </button>
+                    <button className="flex items-center gap-3 group/btn">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover/btn:bg-blue-50 transition-all">
+                        <span className="text-2xl group-hover/btn:scale-125 transition-transform grayscale hover:grayscale-0">💬</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-brand-950">5</span>
+                        <span className="text-[9px] font-black text-secondary uppercase tracking-widest">Komentářů</span>
+                      </div>
+                    </button>
+                  </div>
+                  <button className="w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-brand-50 transition-colors text-2xl grayscale hover:grayscale-0" title="Uložit si">
+                    🔖
+                  </button>
+                </div>
+
+              </div>
             </div>
-
-            {/* Post Content */}
-            {post.content && (
-              <div className="text-lg leading-relaxed text-slate-700 whitespace-pre-wrap font-medium">
-                {post.content}
-              </div>
-            )}
-
-            {/* Post Media */}
-            {post.mediaUrls?.length > 0 && (
-              <div className="rounded-[2rem] overflow-hidden shadow-inner bg-muted/20">
-                <div className={`grid gap-2 ${post.mediaUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                  {post.mediaUrls.map((url, i) => (
-                    <img 
-                      key={i} 
-                      src={url} 
-                      className="w-full h-auto object-cover max-h-[500px] hover:scale-[1.02] transition-transform duration-700 cursor-zoom-in" 
-                      alt="Zážitek" 
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Location Badge */}
-            {post.locationName && (
-              <div className="flex">
-                <div className="bg-brand-50 text-brand-700 px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 border border-brand-100 shadow-sm">
-                  📍 {post.locationName}
-                </div>
-              </div>
-            )}
-
-            {/* Post Footer / Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-muted/20 mt-2">
-              <div className="flex gap-8">
-                <button className="flex items-center gap-2 group/like">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center group-hover/like:bg-red-50 transition-colors">
-                    <span className="text-xl group-hover/like:scale-125 transition-transform">🤍</span>
-                  </div>
-                  <span className="font-bold text-secondary text-sm">To se mi líbí</span>
-                </button>
-                <button className="flex items-center gap-2 group/comment">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center group-hover/comment:bg-blue-50 transition-colors">
-                    <span className="text-xl group-hover/comment:scale-125 transition-transform">💬</span>
-                  </div>
-                  <span className="font-bold text-secondary text-sm">Komentovat</span>
-                </button>
-              </div>
-              <button className="flex items-center gap-2 text-brand-500 font-bold hover:underline px-4 py-2 hover:bg-brand-50 rounded-xl transition-colors">
-                🔖 Uložit
-              </button>
-            </div>
-
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
