@@ -108,74 +108,101 @@ export default function TripDetailPage() {
               <div className="flex gap-2 bg-muted p-1 rounded-2xl border border-muted-foreground/10">
                 <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'feed' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('feed')}>Vše</button>
                 <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'map' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('map')}>Mapa</button>
-                <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'expenses' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('expenses')}>Výdaje</button>
-              </div>
-            </div>
-
-            {trip.posts?.length === 0 ? (
+                <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'expenses' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('expenses')}>Výdaje</button>            {trip.posts?.length === 0 ? (
               <div className="card py-20 text-center">
                 <div className="text-6xl mb-4">🏜️</div>
                 <h3 className="text-xl font-bold">Zatím žádné zážitky</h3>
                 <p className="text-secondary mt-2">Buďte první a napište, co se na cestě děje!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {trip.posts?.map((post) => (
-                  <div key={post.id} className="card shadow-xl overflow-hidden group" style={{ borderRadius: '2.5rem' }}>
-                    <div className="p-6 md:p-8 flex flex-col gap-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl overflow-hidden bg-brand-100 flex items-center justify-center shadow-inner">
-                            {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold">{(post.author.name?.[0] || "?")}</span>}
-                          </div>
-                          <div>
-                            <div className="font-bold text-lg">{post.author.name}</div>
-                            <div className="text-xs text-secondary flex items-center gap-1">
-                              <span>🕒 {new Date(post.createdAt).toLocaleString('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                              {post.locationName && (
-                                <>
-                                  <span className="mx-1">•</span>
-                                  <span className="text-brand-500 font-bold flex items-center gap-0.5">
-                                    📍 {post.locationName}
-                                  </span>
-                                </>
-                              )}
+              <div className="relative pl-8 md:pl-12 space-y-12 before:absolute before:left-[11px] md:before:left-[15px] before:top-4 before:bottom-4 before:w-1 before:bg-gradient-to-b before:from-brand-500 before:via-brand-300 before:to-brand-100 before:rounded-full">
+                {trip.posts?.map((post, index) => {
+                  // Výpočet vzdálenosti od předchozího bodu
+                  let distance = null;
+                  const prevPost = trip.posts[index - 1];
+                  if (prevPost && prevPost.lat && prevPost.lng && post.lat && post.lng) {
+                    const R = 6371; 
+                    const dLat = (parseFloat(post.lat) - parseFloat(prevPost.lat)) * (Math.PI / 180);
+                    const dLon = (parseFloat(post.lng) - parseFloat(prevPost.lng)) * (Math.PI / 180);
+                    const a = 
+                      Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(parseFloat(prevPost.lat) * (Math.PI/180)) * Math.cos(parseFloat(post.lat) * (Math.PI/180)) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    distance = (R * c).toFixed(1);
+                  }
+
+                  return (
+                    <div key={post.id} className="relative group animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                      {/* Timeline Dot */}
+                      <div className="absolute -left-[37px] md:-left-[45px] top-2 w-6 h-6 md:w-8 md:h-8 rounded-full bg-white border-4 border-brand-500 shadow-md z-10 group-hover:scale-125 transition-transform" />
+                      
+                      {/* Distance Badge */}
+                      {distance && (
+                        <div className="absolute -left-[55px] md:-left-[65px] -top-8 bg-success-100 text-success-700 text-[10px] font-black px-2 py-1 rounded-full border border-success-200 shadow-sm z-20">
+                          {distance} km
+                        </div>
+                      )}
+
+                      <div className="card shadow-xl overflow-hidden hover:shadow-2xl transition-all border border-muted/20" style={{ borderRadius: '2rem' }}>
+                        <div className="p-6 md:p-8 flex flex-col gap-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl overflow-hidden bg-brand-100 flex items-center justify-center">
+                                {post.author.avatar ? <img src={post.author.avatar} className="w-full h-full object-cover" /> : <span className="font-bold text-xs">{(post.author.name?.[0] || "?")}</span>}
+                              </div>
+                              <div>
+                                {post.locationName ? (
+                                  <div className="font-bold text-xl text-brand-900 leading-tight">📍 {post.locationName}</div>
+                                ) : (
+                                  <div className="font-bold text-lg">{post.author.name}</div>
+                                )}
+                                <div className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">
+                                  {new Date(post.createdAt).toLocaleString('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' })}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              {post.type === 'CHECKIN' && <span className="badge badge-success text-[10px] font-bold">ZASTÁVKA</span>}
+                              <button className="btn btn-ghost btn-sm btn-icon">•••</button>
                             </div>
                           </div>
-                        </div>
-                        <button className="btn btn-ghost btn-sm btn-icon">•••</button>
-                      </div>
 
-                      {post.content && (
-                        <div className="text-lg leading-relaxed text-slate-700 whitespace-pre-wrap">
-                          {post.content}
-                        </div>
-                      )}
+                          {post.content && (
+                            <div className="text-base leading-relaxed text-slate-700 whitespace-pre-wrap">
+                              {post.content}
+                            </div>
+                          )}
 
-                      {post.mediaUrls?.length > 0 && (
-                        <div className="grid grid-cols-1 gap-4 rounded-3xl overflow-hidden">
-                          {post.mediaUrls.map((url: string, i: number) => (
-                            <img key={i} src={url} className="w-full h-auto object-cover max-h-[600px] hover:scale-[1.02] transition-transform duration-500" alt="Media content" />
-                          ))}
-                        </div>
-                      )}
+                          {post.mediaUrls?.length > 0 && (
+                            <div className="grid grid-cols-1 gap-4 rounded-2xl overflow-hidden shadow-inner">
+                              {post.mediaUrls.map((url: string, i: number) => (
+                                <img key={i} src={url} className="w-full h-auto object-cover max-h-[500px] hover:scale-[1.01] transition-transform duration-500" alt="Trip moment" />
+                              ))}
+                            </div>
+                          )}
 
-                      <div className="flex items-center justify-between pt-4 border-t border-muted/30">
-                        <div className="flex gap-6">
-                          <button className="flex items-center gap-2 group/like">
-                            <span className="text-2xl group-hover/like:scale-125 transition-transform">❤️</span>
-                            <span className="font-bold text-secondary">0</span>
-                          </button>
-                          <button className="flex items-center gap-2 group/comment">
-                            <span className="text-2xl group-hover/comment:scale-125 transition-transform">💬</span>
-                            <span className="font-bold text-secondary">0</span>
-                          </button>
+                          <div className="flex items-center justify-between pt-4 border-t border-muted/30">
+                            <div className="flex gap-4">
+                              <button className="flex items-center gap-1.5 text-secondary hover:text-brand-600 transition-colors">
+                                <span className="text-xl">❤️</span>
+                                <span className="font-bold text-sm">0</span>
+                              </button>
+                              <button className="flex items-center gap-1.5 text-secondary hover:text-brand-600 transition-colors">
+                                <span className="text-xl">💬</span>
+                                <span className="font-bold text-sm">0</span>
+                              </button>
+                            </div>
+                            <button className="text-xs font-bold text-brand-600 hover:underline">Sdílet zážitek →</button>
+                          </div>
                         </div>
-                        <button className="flex items-center gap-2 text-brand-500 font-bold hover:underline">
-                          🔖 Uložit
-                        </button>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            )}
+>
                   </div>
                 ))}
               </div>
