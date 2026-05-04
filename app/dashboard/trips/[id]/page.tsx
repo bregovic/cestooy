@@ -108,7 +108,11 @@ export default function TripDetailPage() {
               <div className="flex gap-2 bg-muted p-1 rounded-2xl border border-muted-foreground/10">
                 <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'feed' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('feed')}>Vše</button>
                 <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'map' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('map')}>Mapa</button>
-                <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'expenses' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('expenses')}>Výdaje</button>            {trip.posts?.length === 0 ? (
+                <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'expenses' ? 'bg-white shadow-sm' : 'text-secondary hover:text-primary'}`} onClick={() => setActiveTab('expenses')}>Výdaje</button>
+              </div>
+            </div>
+
+            {trip.posts?.length === 0 ? (
               <div className="card py-20 text-center">
                 <div className="text-6xl mb-4">🏜️</div>
                 <h3 className="text-xl font-bold">Zatím žádné zážitky</h3>
