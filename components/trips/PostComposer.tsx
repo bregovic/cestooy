@@ -114,28 +114,28 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-2 mb-6 p-1 bg-brand-50 rounded-2xl">
         <button 
           type="button" 
-          onClick={() => setMode("BLOG")}
-          className={`flex-1 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${mode === "BLOG" ? "bg-brand-950 text-white shadow-xl scale-105" : "bg-brand-50 text-brand-400 hover:bg-brand-100"}`}
+          onClick={() => setMode("BLOG") || setLocationName("")}
+          className={`flex-1 py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] transition-all ${mode === "BLOG" ? "bg-white text-brand-950 shadow-sm" : "text-brand-400 hover:text-brand-600"}`}
         >
-          ✍️ Příspěvek
+          Příspěvek
         </button>
         <button 
           type="button" 
           onClick={() => setMode("CHECKIN")}
-          className={`flex-1 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${mode === "CHECKIN" ? "bg-brand-950 text-white shadow-xl scale-105" : "bg-brand-50 text-brand-400 hover:bg-brand-100"}`}
+          className={`flex-1 py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] transition-all ${mode === "CHECKIN" ? "bg-white text-brand-950 shadow-sm" : "text-brand-400 hover:text-brand-600"}`}
         >
-          📍 Check-in
+          Check-in
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative group">
+        <div className="relative">
           <textarea
-            className="w-full text-lg border-none focus:ring-0 resize-none min-h-[120px] bg-white/50 p-6 rounded-[2rem] placeholder:text-slate-300 font-medium shadow-inner transition-all focus:bg-white"
-            placeholder={mode === "BLOG" ? "Co máš dnes na srdci? 📝" : "Kde jsi a jak se tam cítíš? 🗺️"}
+            className="w-full text-base border-none focus:ring-0 resize-none min-h-[100px] bg-transparent p-2 placeholder:text-brand-200 font-medium transition-all"
+            placeholder={mode === "BLOG" ? "Co nového?" : "Kde se právě nacházíš?"}
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
@@ -144,12 +144,12 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
         <div className="pt-2 flex flex-col gap-4">
           {(mode === "CHECKIN" || locationName) && (
             <div className="relative animate-slide-up">
-              <div className="flex items-center gap-3 px-6 py-4 bg-brand-50 rounded-2xl border border-brand-100 focus-within:border-brand-400 focus-within:bg-white transition-all shadow-inner">
-                <span className="text-xl">📍</span>
+              <div className="flex items-center gap-3 px-5 py-3 bg-brand-50/50 rounded-2xl border border-transparent focus-within:border-brand-100 focus-within:bg-white transition-all">
+                <span className="text-lg opacity-50">📍</span>
                 <input
                   type="text"
-                  className="bg-transparent border-none focus:ring-0 w-full text-sm font-bold text-brand-950"
-                  placeholder="Vyhledej místo..."
+                  className="bg-transparent border-none focus:ring-0 w-full text-sm font-bold text-brand-950 placeholder:text-brand-200"
+                  placeholder="Hledat místo..."
                   value={locationName}
                   onChange={(e) => {
                     setLocationName(e.target.value);
@@ -159,8 +159,7 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
                 <button 
                   type="button" 
                   onClick={getGeoLocation}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-brand-200 rounded-xl text-brand-700 transition-colors bg-white shadow-sm border border-brand-100"
-                  title="Moje aktuální poloha"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg text-brand-700 transition-all opacity-50 hover:opacity-100"
                 >
                   🎯
                 </button>
@@ -171,11 +170,10 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
                     <button
                       key={i}
                       type="button"
-                      className="w-full text-left px-6 py-4 text-sm font-bold text-brand-950 hover:bg-brand-50 border-b border-brand-50 last:border-none transition-colors flex items-center gap-3"
+                      className="w-full text-left px-6 py-4 text-xs font-bold text-brand-950 hover:bg-brand-50 border-b border-brand-50 last:border-none transition-colors"
                       onClick={() => handleSelectLocation(loc)}
                     >
-                      <span className="w-8 h-8 flex items-center justify-center bg-brand-100 rounded-lg text-lg">🚩</span>
-                      <span className="truncate">{loc.display_name}</span>
+                      {loc.display_name}
                     </button>
                   ))}
                 </div>
@@ -183,28 +181,31 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between bg-white/30 p-2 rounded-2xl border border-white/50">
-            <div className="flex gap-1 items-center">
+          <div className="flex items-center justify-between pt-4 border-t border-brand-50">
+            <div className="flex gap-4 items-center">
               {!tripId && activeTrips.length > 0 && (
-                <select 
-                  className="bg-white border border-brand-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-brand-600 outline-none hover:border-brand-300 transition-colors cursor-pointer"
-                  value={selectedTripId}
-                  onChange={(e) => setSelectedTripId(e.target.value)}
-                >
-                  <option value="">🏠 Veřejná zeď</option>
-                  {activeTrips.map(t => (
-                    <option key={t.id} value={t.id}>🚢 {t.title}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select 
+                    className="appearance-none bg-brand-50 border-none rounded-xl pl-4 pr-10 py-2.5 text-[9px] font-black uppercase tracking-widest text-brand-600 outline-none hover:bg-brand-100 transition-colors cursor-pointer"
+                    value={selectedTripId}
+                    onChange={(e) => setSelectedTripId(e.target.value)}
+                  >
+                    <option value="">Veřejná zeď</option>
+                    {activeTrips.map(t => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] opacity-30">▼</div>
+                </div>
               )}
-              <button type="button" className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-md transition-all text-xl grayscale hover:grayscale-0" title="Přidat fotky">📸</button>
+              <button type="button" className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-brand-50 transition-all text-xl opacity-40 hover:opacity-100">🖼️</button>
             </div>
             <button
               type="submit"
               disabled={isSubmitting || (!content && !locationName)}
-              className="btn btn-primary px-12 py-4 rounded-2xl shadow-xl shadow-brand-200 font-black text-xs uppercase tracking-widest hover:scale-105 transition-all"
+              className="bg-brand-950 text-white px-8 py-3.5 rounded-2xl shadow-lg shadow-brand-100 font-black text-[10px] uppercase tracking-[0.2em] hover:scale-105 transition-all disabled:opacity-20 disabled:grayscale"
             >
-              {isSubmitting ? "Odesílám..." : "Publikovat 🚀"}
+              {isSubmitting ? "..." : "Publikovat"}
             </button>
           </div>
         </div>
