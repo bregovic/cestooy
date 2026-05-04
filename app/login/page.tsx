@@ -87,7 +87,7 @@ export default function LoginPage() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-brand-500/60" htmlFor="password">
                   Heslo
                 </label>
-                <Link href="/forgot-password" size="sm" className="text-[9px] font-bold text-brand-400 hover:text-brand-600">
+                <Link href="/forgot-password" className="text-[9px] font-bold text-brand-400 hover:text-brand-600">
                   Zapomenuto?
                 </Link>
               </div>
