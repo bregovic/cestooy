@@ -80,8 +80,7 @@ export default function Sidebar({
   const [loggingOut, setLoggingOut] = useState(false);
 
   const navItems: NavItem[] = [
-    { href: "/dashboard", label: "Přehled", icon: <LayoutGridIcon /> },
-    { href: "/dashboard/wall", label: "Nástěnka", icon: <LayoutIcon /> },
+    { href: "/dashboard", label: "Nástěnka", icon: <LayoutIcon /> },
     { href: "/dashboard/chat", label: "Chat", icon: <MessageSquareIcon />, badge: unreadMessages },
     { href: "/dashboard/trips", label: "Akce", icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
