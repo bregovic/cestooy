@@ -119,8 +119,6 @@ export default function NewTripPage() {
           </div>
         </form>
       </div>
-        </form>
-      </div>
     </div>
   );
 }
