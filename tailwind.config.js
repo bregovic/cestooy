@@ -2,31 +2,47 @@
 module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
         brand: {
-          50: '#F5F5EA',
-          100: '#E2E2D0',
-          200: '#C5C5A1',
-          300: '#A8A872',
-          400: '#8B8B43',
+          50: '#f5f5ea',
+          100: '#e2e2d0',
+          200: '#c5c5a1',
+          300: '#a8a872',
+          400: '#8b8b43',
           500: '#305555',
-          600: '#1E3A3A',
-          700: '#162B2B',
-          800: '#0E1C1C',
-          900: '#070E0E',
+          600: '#1e3a3a',
+          700: '#162b2b',
+          800: '#0e1c1c',
+          900: '#070e0e',
           950: '#030707',
-        },
-        secondary: '#475569',
+        }
+      },
+      fontFamily: {
+        sans: ['Poppins', 'sans-serif'],
+        display: ['Outfit', 'sans-serif'],
       },
       borderRadius: {
-        '2xl': '1rem',
-        '3xl': '1.5rem',
+        '3xl': '2rem',
+        '4xl': '3rem',
       },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
+      }
     },
   },
   plugins: [],

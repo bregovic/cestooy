@@ -1,40 +1,20 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;700&display=swap');
-
-@theme {
-  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
-
-  --color-brand-50: #f5f5ea;
-  --color-brand-100: #e2e2d0;
-  --color-brand-200: #c5c5a1;
-  --color-brand-300: #a8a872;
-  --color-brand-400: #8b8b43;
-  --color-brand-500: #305555;
-  --color-brand-600: #1e3a3a;
-  --color-brand-700: #162b2b;
-  --color-brand-800: #0e1c1c;
-  --color-brand-900: #070e0e;
-  --color-brand-950: #030707;
-}
 
 :root {
   --bg-color: #fbfaf9;
   --bg-gradient: radial-gradient(circle at 50% 0%, #ffffff 0%, #f7f7f0 100%);
   --text-main: #1e293b;
   --text-muted: #64748b;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  --radius-xl: 2rem;
 }
 
 body {
-  font-family: var(--font-sans);
-  background: var(--bg-color);
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-color);
   background-image: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-main);
@@ -42,27 +22,40 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+}
+
 /* Global Reset for Icons - Hard Limit */
 svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
   max-width: 100%;
   max-height: 100%;
 }
 
-/* Base Panel Styles without @apply for stability */
-.glass-panel {
-  background: white;
-  border: 1px solid #f0f0e6;
-  border-radius: 2rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-  transition: all 0.3s ease;
-}
-
-.glass-panel:hover {
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04);
-  border-color: #e2e2d0;
+/* Custom Components */
+@layer components {
+  .glass-panel {
+    @apply bg-white border border-[#f0f0e6] rounded-[2rem] shadow-sm transition-all duration-300;
+  }
+  
+  .glass-panel:hover {
+    @apply shadow-md border-[#e2e2d0];
+  }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #e2e2d0; border-radius: 10px; }
+
+/* Dashboard Layout helpers */
+.app-shell {
+  @apply flex min-h-screen relative;
+}
+
+.main-content {
+  @apply flex-1 min-h-screen w-full lg:ml-[260px] pt-20 lg:pt-0;
+}
