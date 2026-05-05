@@ -36,7 +36,7 @@ export async function GET() {
           select: { comments: true, likes: true }
         }
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { loggedAt: "desc" },
       take: 50
     });
 
@@ -54,30 +54,43 @@ export async function GET() {
 }
 
 // POST /api/social/posts - Vytvoření obecného příspěvku (mimo konkrétní výlet)
-// Poznámka: V Cestooy preferujeme příspěvky v rámci výletů, 
-// ale necháme tuhle možnost pro "rychlé statusy".
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
-    const { content, type, locationName, lat, lng, tripId, mediaUrls } = await req.json();
+    const { 
+      content, 
+      type, 
+      locationName, 
+      lat, 
+      lng, 
+      tripId, 
+      mediaUrls,
+      amount,
+      mileage,
+      loggedAt 
+    } = await req.json();
 
-    if (!content && !locationName) {
-      return NextResponse.json({ error: "Příspěvek nesmí být prázdný" }, { status: 400 });
+    if (!content && !locationName && !amount && !mileage) {
+      return NextResponse.json({ error: "Záznam nesmí být prázdný" }, { status: 400 });
     }
 
     const post = await prisma.tripPost.create({
       data: {
         authorId: user.id,
         content: content?.trim(),
-        type: type || (locationName ? "CHECKIN" : "BLOG"),
+        type: type || "BLOG",
         locationName,
         lat,
         lng,
         tripId,
         mediaUrls: mediaUrls || [],
+        amount: amount ? Number(amount) : null,
+        mileage: mileage ? Number(mileage) : null,
+        loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
       },
       include: {
         author: { select: { id: true, name: true, avatar: true } },
+        trip: { select: { id: true, title: true } },
       },
     });
 

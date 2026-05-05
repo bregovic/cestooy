@@ -1,232 +1,201 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface LocationResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-}
 
 interface PostComposerProps {
   tripId?: string;
   onSuccess?: () => void;
 }
 
+type Mode = "TEXT" | "PHOTO" | "PLACE" | "EXPENSE" | "MILEAGE";
+
 export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
   const router = useRouter();
-  const [mode, setMode] = useState<"TEXT" | "PHOTO" | "PLACE">("TEXT");
+  const [mode, setMode] = useState<Mode>("TEXT");
+  const [loading, setLoading] = useState(false);
+  
+  // Fields
   const [content, setContent] = useState("");
-  const [locationName, setLocationName] = useState("");
-  const [address, setAddress] = useState("");
-  const [coords, setCoords] = useState<{ lat: string; lng: string } | null>(null);
-  const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTripId, setSelectedTripId] = useState(tripId || "");
-  const [activeTrips, setActiveTrips] = useState<{id: string, title: string}[]>([]);
+  const [image, setImage] = useState("");
+  const [placeName, setPlaceName] = useState("");
+  const [lat, setLat] = useState<string>("");
+  const [lon, setLon] = useState<string>("");
+  const [amount, setAmount] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [loggedAt, setLoggedAt] = useState(new Date().toISOString().slice(0, 16));
+  
+  // Search for location
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (!tripId) {
-      fetch("/api/trips?status=ONGOING")
-        .then(res => res.json())
-        .then(data => setActiveTrips(data.trips || []))
-        .catch(() => {});
-    }
-  }, [tripId]);
-
-  const getGeoLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        const lat = pos.coords.latitude.toString();
-        const lon = pos.coords.longitude.toString();
-        setCoords({ lat, lng: lon });
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.display_name) {
-              setAddress(data.display_name);
-              // Try to get a simpler name from the data if possible
-              const name = data.address.amenity || data.address.building || data.address.road || "Moje poloha";
-              setLocationName(name);
-            }
-          });
-      });
-    }
-  };
-
-  const searchAddress = async (query: string) => {
-    if (query.length < 3) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
+  async function searchLocation() {
+    if (!query) return;
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
       const data = await res.json();
-      setSearchResults(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSearching(false);
+      setResults(data);
+    } catch (e) {
+      console.error(e);
     }
-  };
+  }
 
-  const handleSelectLocation = (loc: LocationResult) => {
-    setLocationName(loc.display_name.split(",")[0]);
-    setAddress(loc.display_name);
-    setCoords({ lat: loc.lat, lng: loc.lon });
-    setSearchResults([]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content && !locationName) return;
+    setLoading(true);
 
-    setIsSubmitting(true);
+    const typeMap: Record<Mode, string> = {
+      TEXT: "BLOG",
+      PHOTO: "PHOTO",
+      PLACE: "CHECKIN",
+      EXPENSE: "EXPENSE",
+      MILEAGE: "MILEAGE"
+    };
+
     try {
-      const res = await fetch(`/api/social/posts`, {
+      const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          tripId,
           content,
-          locationName: mode === "PLACE" ? locationName : null,
-          address: mode === "PLACE" ? address : null,
-          lat: coords ? parseFloat(coords.lat) : null,
-          lng: coords ? parseFloat(coords.lng) : null,
-          tripId: selectedTripId || null,
-          type: mode === "PLACE" ? "CHECKIN" : "BLOG",
-          mediaUrls: []
+          type: typeMap[mode],
+          mediaUrls: image ? [image] : [],
+          locationName: placeName || query,
+          lat: lat ? parseFloat(lat) : null,
+          lng: lon ? parseFloat(lon) : null,
+          amount: amount ? parseFloat(amount) : null,
+          mileage: mileage ? parseInt(mileage) : null,
+          loggedAt: new Date(loggedAt).toISOString(),
         }),
       });
 
       if (res.ok) {
         setContent("");
-        setLocationName("");
-        setAddress("");
-        setCoords(null);
-        setMode("TEXT");
+        setImage("");
+        setPlaceName("");
+        setAmount("");
+        setMileage("");
+        setQuery("");
+        setResults([]);
         if (onSuccess) onSuccess();
         router.refresh();
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex p-1.5 bg-brand-50/50 rounded-2xl border border-brand-100/20 max-w-sm mx-auto md:mx-0 shadow-sm">
-        {(["TEXT", "PHOTO", "PLACE"] as const).map((m) => (
+    <div className="glass-panel p-6 mb-8 animate-fade-in">
+      {/* Tab Switcher */}
+      <div className="flex flex-wrap gap-2 mb-6 p-1 bg-brand-50/50 rounded-2xl border border-brand-100/20">
+        {(["TEXT", "PHOTO", "PLACE", "EXPENSE", "MILEAGE"] as Mode[]).map((m) => (
           <button 
             key={m}
-            type="button" 
             onClick={() => setMode(m)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 ${mode === m ? "bg-white text-brand-950 shadow-md ring-1 ring-brand-100/10" : "text-brand-400 hover:text-brand-600 hover:bg-white/50"}`}
+            className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${mode === m ? "bg-white text-brand-950 shadow-md" : "text-brand-300 hover:text-brand-500"}`}
           >
-            {m === "TEXT" && <span className="opacity-70">✍️</span>}
-            {m === "PHOTO" && <span className="opacity-70">📸</span>}
-            {m === "PLACE" && <span className="opacity-70">📍</span>}
-            {m === "TEXT" ? "Text" : m === "PHOTO" ? "Foto" : "Místo"}
+            {m === "TEXT" && "✍️ Text"}
+            {m === "PHOTO" && "📸 Foto"}
+            {m === "PLACE" && "📍 Místo"}
+            {m === "EXPENSE" && "💰 Výdaj"}
+            {m === "MILEAGE" && "⛽ KM"}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {mode === "PLACE" && (
-          <div className="space-y-4 animate-slide-up">
-            <div className="relative">
-              <div className="flex items-center gap-3 px-5 py-4 bg-brand-50/50 rounded-2xl border border-transparent focus-within:border-brand-100 focus-within:bg-white transition-all">
-                <span className="w-5 h-5 flex items-center justify-center opacity-40">🏢</span>
-                <input
-                  type="text"
-                  className="bg-transparent border-none focus:ring-0 w-full text-sm font-bold text-brand-950 placeholder:text-brand-200"
-                  placeholder="Název místa (např. Moje oblíbená kavárna)"
-                  value={locationName}
-                  onChange={(e) => {
-                    setLocationName(e.target.value);
-                    searchAddress(e.target.value);
-                  }}
-                />
-                <button 
-                  type="button" 
-                  onClick={getGeoLocation}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-brand-100 rounded-xl text-brand-700 transition-all bg-white shadow-sm border border-brand-50"
-                  title="Najít mou polohu"
-                >
-                  🎯
-                </button>
-              </div>
-              {searchResults.length > 0 && (
-                <div className="absolute z-30 w-full mt-2 bg-white shadow-2xl rounded-[2rem] border border-brand-50 overflow-hidden animate-slide-up ring-1 ring-brand-100">
-                  {searchResults.map((loc, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className="w-full text-left px-6 py-4 text-[11px] font-bold text-brand-950 hover:bg-brand-50 border-b border-brand-50 last:border-none transition-colors"
-                      onClick={() => handleSelectLocation(loc)}
-                    >
-                      {loc.display_name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-3 px-5 py-3 bg-brand-50/30 rounded-2xl border border-transparent focus-within:border-brand-100 focus-within:bg-white transition-all">
-              <span className="text-xs opacity-40">📍</span>
-              <input
-                type="text"
-                className="bg-transparent border-none focus:ring-0 w-full text-[11px] font-medium text-brand-600 placeholder:text-brand-200"
-                placeholder="Přesná adresa (ulice, město...)"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="relative">
-          <textarea
-            className="w-full text-base border-none focus:ring-0 resize-none min-h-[100px] bg-transparent p-2 placeholder:text-brand-200 font-medium transition-all"
-            placeholder={mode === "TEXT" ? "Co nového?" : mode === "PHOTO" ? "Napiš něco k fotce..." : "Jak se ti tu líbí?"}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        
+        {/* Universal Time Picker for all modes */}
+        <div className="flex items-center gap-3 px-4 py-2 bg-brand-50/30 rounded-xl border border-brand-100/10">
+          <span className="text-[10px] font-bold text-brand-300 uppercase tracking-wider">Kdy:</span>
+          <input 
+            type="datetime-local" 
+            className="bg-transparent border-none focus:ring-0 text-xs font-bold text-brand-950 outline-none"
+            value={loggedAt}
+            onChange={(e) => setLoggedAt(e.target.value)}
           />
         </div>
 
-        <div className="pt-4 flex items-center justify-between border-t border-brand-50">
-          <div className="flex gap-4 items-center">
-            {!tripId && activeTrips.length > 0 && (
-              <div className="relative">
-                <select 
-                  className="appearance-none bg-brand-50 border-none rounded-xl pl-4 pr-10 py-2.5 text-[9px] font-black uppercase tracking-widest text-brand-600 outline-none hover:bg-brand-100 transition-colors cursor-pointer"
-                  value={selectedTripId}
-                  onChange={(e) => setSelectedTripId(e.target.value)}
-                >
-                  <option value="">Veřejná zeď</option>
-                  {activeTrips.map(t => (
-                    <option key={t.id} value={t.id}>{t.title}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] opacity-30">▼</div>
+        {mode === "PLACE" && (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Hledat lokaci (např. Berlin, Hotel...)"
+                className="flex-1 bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <button type="button" onClick={searchLocation} className="px-4 bg-brand-100 text-brand-600 rounded-2xl font-bold text-xs hover:bg-brand-200">Hledat</button>
+            </div>
+            {results.length > 0 && (
+              <div className="max-h-40 overflow-y-auto bg-white border border-brand-100 rounded-xl shadow-lg">
+                {results.map((r, i) => (
+                  <button key={i} type="button" onClick={() => { setPlaceName(r.display_name); setLat(r.lat); setLon(r.lon); setResults([]); }} className="w-full text-left px-4 py-2 text-xs hover:bg-brand-50 border-b border-brand-50">
+                    {r.display_name}
+                  </button>
+                ))}
               </div>
             )}
-            {mode === "PHOTO" && (
-              <button type="button" className="flex items-center gap-2 px-4 py-2 bg-brand-50 rounded-xl text-[9px] font-black uppercase tracking-widest text-brand-600 hover:bg-brand-100 transition-all">
-                <span>📸</span> Vybrat foto
-              </button>
-            )}
+            {placeName && <div className="text-xs font-bold text-brand-600 flex items-center gap-2">✅ {placeName.split(',')[0]}</div>}
           </div>
+        )}
+
+        {mode === "EXPENSE" && (
+          <div className="flex gap-3">
+            <input
+              type="number"
+              placeholder="Částka"
+              className="w-32 bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <select className="bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm outline-none">
+              <option>CZK</option>
+              <option>EUR</option>
+              <option>USD</option>
+            </select>
+          </div>
+        )}
+
+        {mode === "MILEAGE" && (
+          <input
+            type="number"
+            placeholder="Stav kilometrů (např. 125800)"
+            className="w-full bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
+            value={mileage}
+            onChange={(e) => setMileage(e.target.value)}
+          />
+        )}
+
+        {mode === "PHOTO" && (
+          <input
+            type="text"
+            placeholder="URL fotky (připravujeme nahrávání...)"
+            className="w-full bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+          />
+        )}
+
+        <textarea
+          placeholder={mode === "TEXT" ? "Napiš střípek z cesty..." : "Přidej popis k záznamu..."}
+          className="w-full bg-brand-50/50 border border-brand-100/50 rounded-3xl p-5 min-h-[120px] text-sm focus:bg-white transition-all outline-none resize-none"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+
+        <div className="flex justify-end pt-2">
           <button
             type="submit"
-            disabled={isSubmitting || (!content && !locationName)}
-            className="bg-brand-950 text-white px-8 py-3.5 rounded-2xl shadow-lg shadow-brand-100 font-black text-[10px] uppercase tracking-[0.2em] hover:scale-105 transition-all disabled:opacity-20 disabled:grayscale"
+            disabled={loading || (!content.trim() && !amount && !mileage && !image && !placeName)}
+            className="bg-brand-950 text-white px-10 py-3.5 rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-950/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2"
           >
-            {isSubmitting ? "..." : "Publikovat"}
+            {loading ? "Ukládám..." : "Uložit záznam →"}
           </button>
         </div>
       </form>

@@ -169,11 +169,18 @@ model TripPost {
   mediaUrls   String[]  // Cloud storage URLs (R2/S3)
   type        PostType  @default(PHOTO)
   
+  // Expediční data
+  amount      Decimal?  @db.Decimal(10, 2) // Výdaj/Náklad
+  currency    String?   @default("CZK")
+  mileage     Int?      // Stav kilometrů
+  
   // Geolokace
   lat         Float?
   lng         Float?
   locationName String?
   
+  // Časová osa
+  loggedAt    DateTime  @default(now()) // Umožňuje retroaktivní zadání
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -190,6 +197,8 @@ enum PostType {
   VIDEO
   BLOG
   CHECKIN
+  EXPENSE
+  MILEAGE
 }
 
 model Like {
