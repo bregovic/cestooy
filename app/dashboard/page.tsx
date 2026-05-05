@@ -41,10 +41,6 @@ export default async function DashboardPage() {
           {/* Main Feed Column */}
           <div className="lg:col-span-8 space-y-10">
             
-            {/* Quick Check-in Area */}
-            <div className="glass-panel p-8">
-              <PostComposer />
-            </div>
 
             {/* Stories / Ongoing Trips */}
             {myTrips.length > 0 && (
