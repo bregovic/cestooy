@@ -2,13 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
-
-// Dynamically import Map for public profile
-const TripMap = dynamic(() => import("@/components/maps/TripMap"), { 
-  ssr: false,
-  loading: () => <div className="w-full h-full bg-brand-50 animate-pulse" />
-});
+import MagazineMap from "@/components/maps/MagazineMap";
 
 interface UserProfileProps {
   params: {
@@ -90,7 +84,7 @@ export default async function UserProfilePage({ params }: UserProfileProps) {
       {allPosts.length > 0 && (
         <section className="max-w-5xl mx-auto px-6 -mt-12 mb-24 relative z-10">
            <div className="h-[400px] w-full rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white">
-              <TripMap points={allPosts as any} />
+              <MagazineMap points={allPosts as any} />
            </div>
         </section>
       )}

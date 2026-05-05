@@ -1,14 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
 import { calculateExpeditionMileage } from "@/lib/mileage";
-
-// Dynamically import Map to avoid SSR issues with Leaflet
-const TripMap = dynamic(() => import("@/components/maps/TripMap"), { 
-  ssr: false,
-  loading: () => <div className="w-full h-full bg-brand-50 animate-pulse" />
-});
+import MagazineMap from "@/components/maps/MagazineMap";
 
 interface TripPageProps {
   params: {
@@ -116,9 +110,8 @@ export default async function PublicTripPage({ params }: TripPageProps) {
         </div>
       </header>
 
-      {/* Interactive Map Section */}
       <div className="h-[50vh] w-full border-y border-brand-100 relative z-20">
-        <TripMap points={mapPoints} />
+        <MagazineMap points={mapPoints} />
         <div className="absolute top-6 left-6 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-brand-100 max-w-[200px]">
            <div className="text-[9px] font-black uppercase tracking-widest text-brand-400 mb-1">Aktuální poloha</div>
            <div className="text-xs font-black text-brand-950 truncate">
