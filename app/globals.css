@@ -17,22 +17,6 @@
   --color-brand-800: #0e1c1c;
   --color-brand-900: #070e0e;
   --color-brand-950: #030707;
-
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.02);
-  --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.04);
-
-  /* Custom Animations */
-  --animate-fade-in: fade-in 0.5s ease-out;
-  --animate-slide-up: slide-up 0.4s ease-out;
-
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
 }
 
 :root {
@@ -40,9 +24,6 @@
   --bg-gradient: radial-gradient(circle at 50% 0%, #ffffff 0%, #f7f7f0 100%);
   --text-main: #1e293b;
   --text-muted: #64748b;
-  --panel-bg: #ffffff;
-  --panel-border: #f0f0e6;
-  --radius-xl: 2rem;
 }
 
 * {
@@ -53,46 +34,35 @@
 
 body {
   font-family: var(--font-sans);
-  background: var(--bg-gradient);
+  background: var(--bg-color);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-main);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: 700;
-}
-
+/* Global Reset for Icons - Hard Limit */
 svg {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
+  max-width: 100%;
+  max-height: 100%;
 }
 
-/* Custom Utilities */
+/* Base Panel Styles without @apply for stability */
 .glass-panel {
-  @apply bg-white border border-[var(--panel-border)] rounded-[var(--radius-xl)] shadow-sm transition-all duration-300;
+  background: white;
+  border: 1px solid #f0f0e6;
+  border-radius: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  transition: all 0.3s ease;
 }
 
 .glass-panel:hover {
-  @apply shadow-md border-[#e2e2d0];
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04);
+  border-color: #e2e2d0;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #e2e2d0; border-radius: 10px; }
-
-/* ─── APP SHELL ───────────────────────────────────────────────────────────── */
-.app-shell {
-  @apply flex min-h-screen relative;
-}
-
-.main-content {
-  @apply flex-1 min-h-screen w-full lg:ml-[260px] pt-20 lg:pt-0;
-}
-
-.sidebar-overlay {
-  @apply fixed inset-0 bg-brand-950/20 backdrop-blur-sm z-[90] lg:hidden animate-fade-in;
-}
