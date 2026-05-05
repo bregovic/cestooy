@@ -42,11 +42,27 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Generování blogSlug ze jména
+    const slugify = (text: string) => text
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+
+    const blogSlug = `${slugify(name)}-${Math.random().toString(36).substring(2, 5)}`;
+
     const user = await prisma.user.create({
       data: {
         name,
         email: email.toLowerCase(),
         passwordHash,
+        blogSlug,
+        blogTitle: `${name} - Cestooy`
       },
     });
 

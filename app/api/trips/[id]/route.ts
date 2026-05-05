@@ -13,6 +13,9 @@ export async function GET(
     const trip = await prisma.trip.findUnique({
       where: { id },
       include: {
+        owner: {
+          select: { blogSlug: true, name: true, avatar: true }
+        },
         members: {
           include: {
             user: {
@@ -26,7 +29,7 @@ export async function GET(
               select: { id: true, name: true, avatar: true }
             }
           },
-          orderBy: { createdAt: "desc" }
+          orderBy: { loggedAt: "desc" }
         }
       }
     });

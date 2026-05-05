@@ -14,11 +14,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Název výletu je povinný" }, { status: 400 });
     }
 
+    // Helper pro vytvoření slugu
+    const slugify = (text: string) => text
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+
+    const baseSlug = slugify(title);
+    const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+
     // Vytvoření výletu a automatické přidání majitele jako ADMIN člena
     const trip = await prisma.trip.create({
       data: {
         title,
         description,
+        slug,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         isPublic: isPublic || false,
