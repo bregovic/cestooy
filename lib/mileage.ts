@@ -24,9 +24,8 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): nu
 
 /**
  * Recalculates mileage for all posts based on manual mileage entries and GPS distances.
- * If multiple points exist between two mileage entries, the distance delta is distributed proportionally.
  */
-export function calculateExpeditionMileage(posts: Post[]) {
+export function calculateExpeditionMileage<T extends Post>(posts: T[]): (T & { displayMileage: number | null })[] {
   // Sort by time first
   const sorted = [...posts].sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
   
