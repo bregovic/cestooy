@@ -4,7 +4,6 @@ import { useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 
 interface DashboardShellProps {
   user: any;
@@ -20,51 +19,30 @@ export default function DashboardShell({
   children 
 }: DashboardShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const pathname = usePathname();
 
   return (
-    <div className="app-shell">
-      {/* Mobile Topbar */}
-      <header className="mobile-header" style={{ borderBottom: '1px solid #e2e8f0' }}>
+    <div className="flex min-h-screen bg-[var(--bg-color)]">
+      
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-brand-100/50 flex items-center px-4 z-50">
         <button 
-          className="btn btn-ghost btn-icon" 
+          className="p-2 text-brand-400 hover:text-brand-950 transition-colors" 
           onClick={() => setIsSidebarOpen(true)}
           aria-label="Otevřít menu"
-          style={{ flexShrink: 0 }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
         
-        {/* Centered logo */}
-        <Link 
-          href="/dashboard" 
-          style={{ 
-            position: "absolute", 
-            left: "50%", 
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "44px",
-          }}
-        >
-          <Image 
-            src="/logo.png" 
-            alt="Cestooy" 
-            width={110} 
-            height={38} 
-            style={{ objectFit: 'contain', maxHeight: 38 }} 
-            priority
-          />
-        </Link>
-        
-        <div style={{ width: 40, flexShrink: 0 }} />
+        <div className="flex-1 flex justify-center mr-10">
+          <Link href="/dashboard">
+            <Image src="/logo.png" alt="Cestooy" width={100} height={34} className="h-auto w-auto" priority />
+          </Link>
+        </div>
       </header>
-      <div className="mobile-header-divider" />
 
       <Sidebar 
         user={user} 
@@ -74,8 +52,10 @@ export default function DashboardShell({
         onClose={() => setIsSidebarOpen(false)}
       />
       
-      <main className="main-content">
-        {children}
+      <main className="flex-1 w-full lg:ml-[260px] p-6 lg:p-10 pt-24 lg:pt-10 max-w-[1600px] mx-auto">
+        <div className="animate-fade-in">
+          {children}
+        </div>
       </main>
     </div>
   );

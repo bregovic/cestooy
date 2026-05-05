@@ -119,15 +119,17 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Tabs Switcher - Clean & Professional */}
-      <div className="flex p-1.5 bg-brand-50/50 rounded-2xl border border-brand-100/20 max-w-sm">
+      <div className="flex p-1.5 bg-brand-50/50 rounded-2xl border border-brand-100/20 max-w-sm mx-auto md:mx-0 shadow-sm">
         {(["TEXT", "PHOTO", "PLACE"] as const).map((m) => (
           <button 
             key={m}
             type="button" 
             onClick={() => setMode(m)}
-            className={`flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 ${mode === m ? "bg-white text-brand-950 shadow-md" : "text-brand-400 hover:text-brand-600"}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 ${mode === m ? "bg-white text-brand-950 shadow-md ring-1 ring-brand-100/10" : "text-brand-400 hover:text-brand-600 hover:bg-white/50"}`}
           >
+            {m === "TEXT" && <span className="opacity-70">✍️</span>}
+            {m === "PHOTO" && <span className="opacity-70">📸</span>}
+            {m === "PLACE" && <span className="opacity-70">📍</span>}
             {m === "TEXT" ? "Text" : m === "PHOTO" ? "Foto" : "Místo"}
           </button>
         ))}
@@ -138,7 +140,7 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
           <div className="space-y-4 animate-slide-up">
             <div className="relative">
               <div className="flex items-center gap-3 px-5 py-4 bg-brand-50/50 rounded-2xl border border-transparent focus-within:border-brand-100 focus-within:bg-white transition-all">
-                <span className="text-lg opacity-40">🏢</span>
+                <span className="w-5 h-5 flex items-center justify-center opacity-40">🏢</span>
                 <input
                   type="text"
                   className="bg-transparent border-none focus:ring-0 w-full text-sm font-bold text-brand-950 placeholder:text-brand-200"
