@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
@@ -43,10 +44,21 @@ export async function POST(
       },
       include: {
         author: {
-          select: { name: true, avatar: true }
+          select: { name: true, avatar: true, blogSlug: true }
+        },
+        trip: {
+          select: { slug: true }
         }
       }
     });
+
+    // Revalidate paths for instant updates
+    if (post.author.blogSlug) {
+      revalidatePath(`/${post.author.blogSlug}`);
+      if (post.trip.slug) {
+        revalidatePath(`/${post.author.blogSlug}/${post.trip.slug}`);
+      }
+    }
 
     return NextResponse.json(post, { status: 201 });
   } catch (err) {

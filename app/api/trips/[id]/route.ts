@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
@@ -72,8 +73,17 @@ export async function PATCH(
         endDate: body.endDate ? new Date(body.endDate) : undefined,
         coverImage: body.coverImage,
         status: body.status,
+      },
+      include: {
+        owner: { select: { blogSlug: true } }
       }
     });
+
+    // Revalidate paths
+    if (updatedTrip.owner.blogSlug) {
+      revalidatePath(`/${updatedTrip.owner.blogSlug}`);
+      revalidatePath(`/${updatedTrip.owner.blogSlug}/${updatedTrip.slug}`);
+    }
 
     return NextResponse.json(updatedTrip);
   } catch (err) {
