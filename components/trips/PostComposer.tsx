@@ -10,6 +10,34 @@ interface PostComposerProps {
 
 type Mode = "TEXT" | "PHOTO" | "PLACE" | "EXPENSE" | "MILEAGE";
 
+const Icons = {
+  TEXT: (props: any) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+    </svg>
+  ),
+  PHOTO: (props: any) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+    </svg>
+  ),
+  PLACE: (props: any) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+    </svg>
+  ),
+  EXPENSE: (props: any) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ),
+  MILEAGE: (props: any) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    </svg>
+  )
+};
+
 export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("TEXT");
@@ -25,7 +53,6 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
   const [mileage, setMileage] = useState("");
   const [loggedAt, setLoggedAt] = useState(new Date().toISOString().slice(0, 16));
   
-  // Search for location
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
 
@@ -45,39 +72,23 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
     setLoading(true);
 
     const typeMap: Record<Mode, string> = {
-      TEXT: "BLOG",
-      PHOTO: "PHOTO",
-      PLACE: "CHECKIN",
-      EXPENSE: "EXPENSE",
-      MILEAGE: "MILEAGE"
+      TEXT: "BLOG", PHOTO: "PHOTO", PLACE: "CHECKIN", EXPENSE: "EXPENSE", MILEAGE: "MILEAGE"
     };
 
     try {
-      const res = await fetch("/api/posts", {
+      const res = await fetch("/api/social/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tripId,
-          content,
-          type: typeMap[mode],
-          mediaUrls: image ? [image] : [],
-          locationName: placeName || query,
-          lat: lat ? parseFloat(lat) : null,
-          lng: lon ? parseFloat(lon) : null,
-          amount: amount ? parseFloat(amount) : null,
-          mileage: mileage ? parseInt(mileage) : null,
-          loggedAt: new Date(loggedAt).toISOString(),
+          tripId, content, type: typeMap[mode], mediaUrls: image ? [image] : [],
+          locationName: placeName || query, lat: lat ? parseFloat(lat) : null,
+          lng: lon ? parseFloat(lon) : null, amount: amount ? parseFloat(amount) : null,
+          mileage: mileage ? parseInt(mileage) : null, loggedAt: new Date(loggedAt).toISOString(),
         }),
       });
 
       if (res.ok) {
-        setContent("");
-        setImage("");
-        setPlaceName("");
-        setAmount("");
-        setMileage("");
-        setQuery("");
-        setResults([]);
+        setContent(""); setImage(""); setPlaceName(""); setAmount(""); setMileage(""); setQuery(""); setResults([]);
         if (onSuccess) onSuccess();
         router.refresh();
       }
@@ -89,102 +100,74 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
   }
 
   return (
-    <div className="glass-panel p-6 mb-8 animate-fade-in">
-      {/* Tab Switcher */}
-      <div className="flex flex-wrap gap-2 mb-6 p-1 bg-brand-50/50 rounded-2xl border border-brand-100/20">
+    <div className="bg-white border border-brand-100 rounded-[2.5rem] p-4 md:p-6 mb-10 shadow-sm">
+      {/* Premium Tab Switcher */}
+      <div className="flex items-center justify-between gap-1 mb-6 bg-brand-50/50 p-1.5 rounded-3xl border border-brand-100/30">
         {(["TEXT", "PHOTO", "PLACE", "EXPENSE", "MILEAGE"] as Mode[]).map((m) => (
           <button 
             key={m}
             onClick={() => setMode(m)}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${mode === m ? "bg-white text-brand-950 shadow-md" : "text-brand-300 hover:text-brand-500"}`}
+            className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all ${mode === m ? "bg-white text-brand-950 shadow-sm border border-brand-100/20" : "text-brand-300 hover:text-brand-500"}`}
           >
-            {m === "TEXT" && "✍️ Text"}
-            {m === "PHOTO" && "📸 Foto"}
-            {m === "PLACE" && "📍 Místo"}
-            {m === "EXPENSE" && "💰 Výdaj"}
-            {m === "MILEAGE" && "⛽ KM"}
+            <div className={`p-1.5 rounded-lg ${mode === m ? "bg-brand-50 text-brand-600" : "bg-transparent text-current"}`}>
+              {m === "TEXT" && <Icons.TEXT className="w-4 h-4" />}
+              {m === "PHOTO" && <Icons.PHOTO className="w-4 h-4" />}
+              {m === "PLACE" && <Icons.PLACE className="w-4 h-4" />}
+              {m === "EXPENSE" && <Icons.EXPENSE className="w-4 h-4" />}
+              {m === "MILEAGE" && <Icons.MILEAGE className="w-4 h-4" />}
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest">{m === "TEXT" ? "Story" : m === "PHOTO" ? "Foto" : m === "PLACE" ? "Místo" : m === "EXPENSE" ? "Výdaj" : "KM"}</span>
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         
-        {/* Universal Time Picker for all modes */}
-        <div className="flex items-center gap-3 px-4 py-2 bg-brand-50/30 rounded-xl border border-brand-100/10">
-          <span className="text-[10px] font-bold text-brand-300 uppercase tracking-wider">Kdy:</span>
-          <input 
-            type="datetime-local" 
-            className="bg-transparent border-none focus:ring-0 text-xs font-bold text-brand-950 outline-none"
-            value={loggedAt}
-            onChange={(e) => setLoggedAt(e.target.value)}
-          />
+        {/* Simplified Form Content */}
+        <div className="flex flex-wrap items-center gap-3">
+           <div className="flex items-center gap-2 px-3 py-2 bg-brand-50/30 rounded-xl border border-brand-100/10">
+             <span className="text-[9px] font-black text-brand-300 uppercase tracking-widest">Kdy</span>
+             <input type="datetime-local" className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-brand-950 outline-none p-0" value={loggedAt} onChange={(e) => setLoggedAt(e.target.value)} />
+           </div>
+
+           {mode === "EXPENSE" && (
+             <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/50 rounded-xl border border-emerald-100/30">
+               <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Částka</span>
+               <input type="number" className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-emerald-950 outline-none p-0 w-16" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
+               <span className="text-[9px] font-black text-emerald-400">CZK</span>
+             </div>
+           )}
+
+           {mode === "MILEAGE" && (
+             <div className="flex items-center gap-2 px-3 py-2 bg-orange-50/50 rounded-xl border border-orange-100/30">
+               <span className="text-[9px] font-black text-orange-600 uppercase tracking-widest">KM</span>
+               <input type="number" className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-orange-950 outline-none p-0 w-24" value={mileage} onChange={(e) => setMileage(e.target.value)} placeholder="Stav" />
+             </div>
+           )}
         </div>
 
         {mode === "PLACE" && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Hledat lokaci (např. Berlin, Hotel...)"
-                className="flex-1 bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <button type="button" onClick={searchLocation} className="px-4 bg-brand-100 text-brand-600 rounded-2xl font-bold text-xs hover:bg-brand-200">Hledat</button>
+              <input type="text" placeholder="Kde jsi?" className="flex-1 bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-xs focus:bg-white outline-none font-medium" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <button type="button" onClick={searchLocation} className="px-4 bg-brand-950 text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:opacity-90">Hledat</button>
             </div>
             {results.length > 0 && (
-              <div className="max-h-40 overflow-y-auto bg-white border border-brand-100 rounded-xl shadow-lg">
+              <div className="max-h-40 overflow-y-auto bg-white border border-brand-100 rounded-xl shadow-lg divide-y divide-brand-50">
                 {results.map((r, i) => (
-                  <button key={i} type="button" onClick={() => { setPlaceName(r.display_name); setLat(r.lat); setLon(r.lon); setResults([]); }} className="w-full text-left px-4 py-2 text-xs hover:bg-brand-50 border-b border-brand-50">
+                  <button key={i} type="button" onClick={() => { setPlaceName(r.display_name); setLat(r.lat); setLon(r.lon); setResults([]); }} className="w-full text-left px-4 py-2.5 text-[10px] hover:bg-brand-50 transition-colors font-bold">
                     {r.display_name}
                   </button>
                 ))}
               </div>
             )}
-            {placeName && <div className="text-xs font-bold text-brand-600 flex items-center gap-2">✅ {placeName.split(',')[0]}</div>}
+            {placeName && <div className="text-[10px] font-black text-brand-600 flex items-center gap-2 px-1">📍 {placeName.split(',')[0]}</div>}
           </div>
-        )}
-
-        {mode === "EXPENSE" && (
-          <div className="flex gap-3">
-            <input
-              type="number"
-              placeholder="Částka"
-              className="w-32 bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <select className="bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm outline-none">
-              <option>CZK</option>
-              <option>EUR</option>
-              <option>USD</option>
-            </select>
-          </div>
-        )}
-
-        {mode === "MILEAGE" && (
-          <input
-            type="number"
-            placeholder="Stav kilometrů (např. 125800)"
-            className="w-full bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
-            value={mileage}
-            onChange={(e) => setMileage(e.target.value)}
-          />
-        )}
-
-        {mode === "PHOTO" && (
-          <input
-            type="text"
-            placeholder="URL fotky (připravujeme nahrávání...)"
-            className="w-full bg-brand-50/50 border border-brand-100/50 rounded-2xl py-3 px-4 text-sm focus:bg-white outline-none"
-            value={image}
-            onChange={(e) => setImage(e.target.value)}
-          />
         )}
 
         <textarea
-          placeholder={mode === "TEXT" ? "Napiš střípek z cesty..." : "Přidej popis k záznamu..."}
-          className="w-full bg-brand-50/50 border border-brand-100/50 rounded-3xl p-5 min-h-[120px] text-sm focus:bg-white transition-all outline-none resize-none"
+          placeholder={mode === "TEXT" ? "Co máš dnes na srdci?" : "Přidej k tomu pár slov..."}
+          className="w-full bg-brand-50/20 border-none rounded-2xl p-4 min-h-[100px] text-sm focus:bg-brand-50/40 transition-all outline-none resize-none font-medium placeholder:text-brand-300"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
@@ -193,9 +176,9 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
           <button
             type="submit"
             disabled={loading || (!content.trim() && !amount && !mileage && !image && !placeName)}
-            className="bg-brand-950 text-white px-10 py-3.5 rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-950/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2"
+            className="bg-brand-950 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-950/10 hover:translate-y-[-2px] active:translate-y-0 transition-all disabled:opacity-20 flex items-center gap-2"
           >
-            {loading ? "Ukládám..." : "Uložit záznam →"}
+            {loading ? "Ukládám..." : "Uložit záznam"}
           </button>
         </div>
       </form>
