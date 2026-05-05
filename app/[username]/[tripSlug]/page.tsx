@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
+import { calculateExpeditionMileage } from "@/lib/mileage";
+
+// Dynamically import Map to avoid SSR issues with Leaflet
+const TripMap = dynamic(() => import("@/components/maps/TripMap"), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-brand-50 animate-pulse" />
+});
 
 interface TripPageProps {
   params: {
@@ -40,35 +48,37 @@ const Icons = {
 export default async function PublicTripPage({ params }: TripPageProps) {
   const { username, tripSlug } = params;
 
-  // Najít výlet podle slugu a ověřit uživatele
   const trip = await prisma.trip.findFirst({
     where: {
       slug: tripSlug,
-      owner: {
-        blogSlug: username
-      },
-      isPublic: true // Blog zobrazujeme jen u veřejných akcí
+      owner: { blogSlug: username },
+      isPublic: true
     },
     include: {
       owner: {
-        select: {
-          name: true,
-          avatar: true,
-          blogTitle: true,
-          bio: true
-        }
+        select: { name: true, avatar: true, blogTitle: true, bio: true }
       },
       posts: {
-        orderBy: {
-          loggedAt: "asc" // Blog vyprávíme od začátku
-        }
+        orderBy: { loggedAt: "asc" }
       }
     }
   });
 
-  if (!trip) {
-    notFound();
-  }
+  if (!trip) notFound();
+
+  // Calculate smart mileage
+  const enrichedPosts = calculateExpeditionMileage(trip.posts as any);
+  
+  // Prepare map points
+  const mapPoints = enrichedPosts
+    .filter(p => p.lat !== null && p.lng !== null)
+    .map(p => ({
+      id: p.id,
+      lat: p.lat,
+      lng: p.lng,
+      locationName: p.locationName,
+      type: p.type
+    }));
 
   return (
     <main className="min-h-screen bg-white">
@@ -82,21 +92,19 @@ export default async function PublicTripPage({ params }: TripPageProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         
         <div className="relative z-10 max-w-4xl mx-auto px-6 pb-20 w-full text-white">
-          <div className="flex items-center gap-3 mb-6 animate-slide-up">
+          <div className="flex items-center gap-3 mb-6">
              <div className="w-1.5 h-1.5 rounded-full bg-brand-400" />
              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-200">Expedice</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none mb-6 animate-slide-up">
+          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none mb-6">
             {trip.title}
           </h1>
-          <div className="flex items-center gap-6 animate-slide-up delay-100">
+          <div className="flex items-center gap-6">
              <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden">
+               <div className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden bg-brand-800 flex items-center justify-center font-bold">
                  {trip.owner.avatar ? (
                    <Image src={trip.owner.avatar} alt={trip.owner.name} width={40} height={40} />
-                 ) : (
-                   <div className="w-full h-full bg-brand-800 flex items-center justify-center font-bold">{trip.owner.name[0]}</div>
-                 )}
+                 ) : trip.owner.name[0]}
                </div>
                <span className="text-sm font-bold">{trip.owner.name}</span>
              </div>
@@ -108,25 +116,31 @@ export default async function PublicTripPage({ params }: TripPageProps) {
         </div>
       </header>
 
+      {/* Interactive Map Section */}
+      <div className="h-[50vh] w-full border-y border-brand-100 relative z-20">
+        <TripMap points={mapPoints} />
+        <div className="absolute top-6 left-6 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-brand-100 max-w-[200px]">
+           <div className="text-[9px] font-black uppercase tracking-widest text-brand-400 mb-1">Aktuální poloha</div>
+           <div className="text-xs font-black text-brand-950 truncate">
+             {mapPoints.length > 0 ? mapPoints[mapPoints.length-1].locationName || "Na cestě..." : "Čekáme na signál..."}
+           </div>
+        </div>
+      </div>
+
       {/* Story Content */}
       <section className="max-w-3xl mx-auto px-6 py-24 space-y-32">
-        
-        {/* Intro */}
         {trip.description && (
           <div className="text-2xl font-medium text-brand-950 leading-relaxed italic border-l-4 border-brand-100 pl-8">
             "{trip.description}"
           </div>
         )}
 
-        {/* Timeline Posts */}
         <div className="space-y-40">
-          {trip.posts.map((post, idx) => (
+          {enrichedPosts.map((post: any) => (
             <article key={post.id} className="relative group">
-              {/* Day Marker */}
               <div className="absolute -left-12 top-0 bottom-0 w-px bg-brand-100 hidden lg:block" />
               
               <div className="space-y-10">
-                {/* Meta Info */}
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="px-4 py-2 bg-brand-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-brand-600 flex items-center gap-2">
                     {post.type === "PHOTO" && <Icons.PHOTO className="w-3.5 h-3.5" />}
@@ -137,37 +151,35 @@ export default async function PublicTripPage({ params }: TripPageProps) {
                     {new Date(post.loggedAt).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </div>
 
-                  {(post.amount || post.mileage || post.locationName) && (
+                  {(post.amount || post.displayMileage || post.locationName) && (
                     <div className="flex flex-wrap gap-2">
                       {post.locationName && (
-                        <div className="px-3 py-2 border border-blue-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-blue-600">
-                          📍 {post.locationName.split(',')[0]}
+                        <div className="px-3 py-2 border border-blue-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-2">
+                          <Icons.CHECKIN className="w-3 h-3" /> {post.locationName.split(',')[0]}
                         </div>
                       )}
                       {post.amount && (
-                        <div className="px-3 py-2 border border-emerald-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-emerald-600">
-                          💰 {post.amount.toString()} CZK
+                        <div className="px-3 py-2 border border-emerald-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                          <Icons.EXPENSE className="w-3 h-3" /> {post.amount.toLocaleString()} CZK
                         </div>
                       )}
-                      {post.mileage && (
-                        <div className="px-3 py-2 border border-orange-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-orange-600">
-                          ⛽ {post.mileage} KM
+                      {post.displayMileage && (
+                        <div className="px-3 py-2 border border-orange-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-2">
+                          <Icons.MILEAGE className="w-3 h-3" /> {post.displayMileage.toLocaleString()} KM
                         </div>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Media */}
                 {post.mediaUrls && post.mediaUrls.length > 0 && (
-                  <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden shadow-2xl">
-                    <Image src={post.mediaUrls[0]} alt="Story moment" fill className="object-cover" />
+                  <div className="relative aspect-[16/10] w-full rounded-[2.5rem] overflow-hidden shadow-2xl group-hover:shadow-brand-950/10 transition-shadow">
+                    <Image src={post.mediaUrls[0]} alt="Story moment" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                   </div>
                 )}
 
-                {/* Text */}
                 {post.content && (
-                  <div className="text-lg md:text-xl text-brand-950 leading-relaxed font-medium whitespace-pre-wrap">
+                  <div className="text-lg md:text-2xl text-brand-950 leading-relaxed font-medium whitespace-pre-wrap">
                     {post.content}
                   </div>
                 )}
@@ -177,23 +189,21 @@ export default async function PublicTripPage({ params }: TripPageProps) {
         </div>
       </section>
 
-      {/* Footer / Author Card */}
+      {/* Footer */}
       <footer className="bg-brand-50/50 py-32 border-t border-brand-100">
         <div className="max-w-4xl mx-auto px-6 text-center">
-           <div className="w-24 h-24 rounded-[2rem] bg-white border border-brand-100 p-2 mx-auto mb-8 rotate-3 shadow-lg">
-             <div className="w-full h-full rounded-2xl overflow-hidden">
+           <div className="w-24 h-24 rounded-[2.5rem] bg-white border border-brand-100 p-2 mx-auto mb-8 rotate-3 shadow-xl">
+             <div className="w-full h-full rounded-[2rem] overflow-hidden bg-brand-950 flex items-center justify-center text-2xl font-bold text-white">
                 {trip.owner.avatar ? (
-                  <Image src={trip.owner.avatar} alt={trip.owner.name} width={96} height={96} className="object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-brand-950 flex items-center justify-center text-2xl font-bold text-white">{trip.owner.name[0]}</div>
-                )}
+                  <Image src={trip.owner.avatar} alt={trip.owner.name} width={96} height={96} className="object-cover h-full" />
+                ) : trip.owner.name[0]}
              </div>
            </div>
            <h3 className="text-2xl font-black text-brand-950 uppercase tracking-tight mb-4">Sledovali jste cestu: {trip.owner.name}</h3>
-           <p className="text-brand-400 font-medium max-w-md mx-auto mb-10 leading-relaxed">{trip.owner.bio || "Milovník dobrodružství a dobrých příběhů."}</p>
+           <p className="text-brand-400 font-bold text-[11px] uppercase tracking-widest max-w-md mx-auto mb-10 leading-relaxed">{trip.owner.bio || "Milovník dobrodružství a dobrých příběhů."}</p>
            
            <div className="flex justify-center gap-4">
-              <Link href={`/${username}`} className="bg-brand-950 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-950/20 hover:scale-105 transition-all">Sledovat autora</Link>
+              <Link href={`/${username}`} className="bg-brand-950 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-950/20 hover:scale-105 transition-all">Sledovat autora</Link>
            </div>
         </div>
       </footer>
@@ -201,5 +211,4 @@ export default async function PublicTripPage({ params }: TripPageProps) {
   );
 }
 
-// Nav Link for SSR
 import Link from "next/link";
