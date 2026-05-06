@@ -26,6 +26,7 @@ interface MapPoint {
 
 interface TripMapProps {
   points: MapPoint[];
+  isMini?: boolean;
 }
 
 function ChangeView({ center }: { center: [number, number] }) {
@@ -34,7 +35,7 @@ function ChangeView({ center }: { center: [number, number] }) {
   return null;
 }
 
-export default function TripMap({ points }: TripMapProps) {
+export default function TripMap({ points, isMini }: TripMapProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -59,12 +60,13 @@ export default function TripMap({ points }: TripMapProps) {
     <div className="w-full h-full relative">
       <MapContainer 
         center={lastPoint} 
-        zoom={13} 
+        zoom={isMini ? 15 : 13} 
         scrollWheelZoom={false}
+        zoomControl={!isMini}
         className="w-full h-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution={isMini ? "" : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         

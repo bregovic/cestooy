@@ -45,7 +45,8 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
   
   // Fields
   const [content, setContent] = useState("");
-  const [image, setImage] = useState("");
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [placeName, setPlaceName] = useState("");
   const [lat, setLat] = useState<string>("");
   const [lon, setLon] = useState<string>("");
@@ -67,6 +68,64 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
     }
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    const newUrls = [...mediaUrls];
+
+    for (const file of files) {
+      try {
+        let finalUrl = "";
+        if (file.type.startsWith("image/")) {
+          finalUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const img = new (window as any).Image();
+              img.onload = () => {
+                const canvas = document.createElement("canvas");
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1200;
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                  if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                } else {
+                  if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx?.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL("image/jpeg", 0.7));
+              };
+              img.src = event.target?.result as string;
+            };
+            reader.readAsDataURL(file);
+          });
+        } else {
+          if (file.size > 20 * 1024 * 1024) {
+            alert("Video je příliš velké (max 20MB).");
+            continue;
+          }
+          finalUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+        }
+        newUrls.push(finalUrl);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setMediaUrls(newUrls);
+    setIsUploading(false);
+    if (e.target) e.target.value = "";
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -80,7 +139,7 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tripId, content, type: typeMap[mode], mediaUrls: image ? [image] : [],
+          tripId, content, type: typeMap[mode], mediaUrls,
           locationName: placeName || query, lat: lat ? parseFloat(lat) : null,
           lng: lon ? parseFloat(lon) : null, amount: amount ? parseFloat(amount) : null,
           mileage: mileage ? parseInt(mileage) : null, loggedAt: new Date(loggedAt).toISOString(),
@@ -88,7 +147,7 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
       });
 
       if (res.ok) {
-        setContent(""); setImage(""); setPlaceName(""); setAmount(""); setMileage(""); setQuery(""); setResults([]);
+        setContent(""); setMediaUrls([]); setPlaceName(""); setAmount(""); setMileage(""); setQuery(""); setResults([]);
         if (onSuccess) onSuccess();
         router.refresh();
       }
@@ -123,7 +182,6 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         
-        {/* Simplified Form Content */}
         <div className="flex flex-wrap items-center gap-3">
            <div className="flex items-center gap-2 px-3 py-2 bg-brand-50/30 rounded-xl border border-brand-100/10">
              <span className="text-[9px] font-black text-brand-300 uppercase tracking-widest">Kdy</span>
@@ -144,7 +202,31 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
                <input type="number" className="bg-transparent border-none focus:ring-0 text-[11px] font-bold text-orange-950 outline-none p-0 w-24" value={mileage} onChange={(e) => setMileage(e.target.value)} placeholder="Stav" />
              </div>
            )}
+
+           <label className={`flex items-center gap-2 px-4 py-2 rounded-xl border border-brand-100/50 cursor-pointer hover:bg-brand-50 transition-all ${isUploading ? 'opacity-50 grayscale' : ''}`}>
+             <Icons.PHOTO className="w-3.5 h-3.5 text-brand-400" />
+             <span className="text-[9px] font-black uppercase tracking-widest text-brand-400">{isUploading ? 'Nahrávám...' : 'Přidat média'}</span>
+             <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+           </label>
         </div>
+
+        {/* Media Preview Gallery */}
+        {mediaUrls.length > 0 && (
+          <div className="flex flex-wrap gap-2 py-2">
+            {mediaUrls.map((url, i) => (
+              <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-brand-100">
+                {url.startsWith("data:video") ? (
+                  <div className="w-full h-full bg-brand-950 flex items-center justify-center text-[8px] font-bold text-white">VIDEO</div>
+                ) : (
+                  <img src={url} className="w-full h-full object-cover" />
+                )}
+                <button type="button" onClick={() => setMediaUrls(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center text-red-500 shadow-sm">
+                  <span className="text-[10px] font-bold">×</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {mode === "PLACE" && (
           <div className="space-y-3">
@@ -175,7 +257,7 @@ export default function PostComposer({ tripId, onSuccess }: PostComposerProps) {
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            disabled={loading || (!content.trim() && !amount && !mileage && !image && !placeName)}
+            disabled={loading || isUploading || (!content.trim() && !amount && !mileage && mediaUrls.length === 0 && !placeName)}
             className="bg-brand-950 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-950/10 hover:translate-y-[-2px] active:translate-y-0 transition-all disabled:opacity-20 flex items-center gap-2"
           >
             {loading ? "Ukládám..." : "Uložit záznam"}

@@ -9,6 +9,6 @@ const TripMap = dynamic(() => import("./TripMap"), {
   loading: () => <div className="w-full h-full bg-brand-50 animate-pulse" />
 });
 
-export default function MagazineMap({ points }: { points: any[] }) {
-  return <TripMap points={points} />;
+export default function MagazineMap({ points, isMini }: { points: any[], isMini?: boolean }) {
+  return <TripMap points={points} isMini={isMini} />;
 }

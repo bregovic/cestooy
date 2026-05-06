@@ -57,9 +57,13 @@ const Icons = {
   )
 };
 
+import { PostDetail } from "@/components/trips/PostDetail";
+import { AnimatePresence } from "framer-motion";
+
 export default function DashboardFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const fetchPosts = async () => {
     try {
@@ -77,6 +81,35 @@ export default function DashboardFeed() {
     fetchPosts();
   }, []);
 
+  const handleUpdatePost = async (id: string, data: any) => {
+    try {
+      const res = await fetch(`/api/social/posts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setPosts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+        if (selectedPost?.id === id) setSelectedPost({ ...selectedPost, ...updated });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      const res = await fetch(`/api/social/posts/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setPosts(prev => prev.filter(p => p.id !== id));
+        setSelectedPost(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col gap-8 animate-pulse">
@@ -92,13 +125,14 @@ export default function DashboardFeed() {
       <PostComposer onSuccess={fetchPosts} />
 
       <div className="relative pl-10 md:pl-14 space-y-12 pb-24">
-        {/* The Timeline Line */}
         <div className="absolute left-[19px] md:left-[27px] top-0 bottom-0 w-[1.5px] bg-gradient-to-b from-brand-100/50 via-brand-200/40 to-transparent" />
 
         {posts.map((post) => (
-          <article key={post.id} className="relative animate-fade-in group">
-            
-            {/* Professional Timeline Icon Badge */}
+          <article 
+            key={post.id} 
+            className="relative animate-fade-in group cursor-pointer"
+            onClick={() => setSelectedPost(post)}
+          >
             <div className="absolute -left-[35px] md:-left-[43px] top-0 w-9 h-9 md:w-11 md:h-11 rounded-2xl bg-white border border-brand-100 shadow-sm flex items-center justify-center z-10 transition-transform group-hover:scale-110 group-hover:shadow-md">
               <div className={`p-2 rounded-xl ${
                 post.type === "PHOTO" ? "bg-purple-50 text-purple-600" :
@@ -116,7 +150,6 @@ export default function DashboardFeed() {
             </div>
 
             <div className="bg-white border border-brand-100 rounded-[2.5rem] shadow-sm overflow-hidden transition-all group-hover:shadow-md group-hover:border-brand-200/50">
-              {/* Header */}
               <div className="p-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-brand-50 border border-brand-100/50 flex items-center justify-center text-[10px] font-black text-brand-600 overflow-hidden shadow-sm">
@@ -134,13 +167,12 @@ export default function DashboardFeed() {
                   </div>
                 </div>
                 {post.trip && (
-                  <Link href={`/dashboard/trips/${post.trip.id}`} className="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors border border-brand-100/20">
+                  <div className="px-3 py-1.5 bg-brand-50 text-brand-600 rounded-xl text-[9px] font-black uppercase tracking-widest border border-brand-100/20">
                     {post.trip.title}
-                  </Link>
+                  </div>
                 )}
               </div>
 
-              {/* Media Content */}
               {post.mediaUrls && post.mediaUrls.length > 0 && (
                 <div className="relative aspect-[4/3] w-full bg-brand-50 overflow-hidden border-y border-brand-50">
                   <Image 
@@ -149,10 +181,14 @@ export default function DashboardFeed() {
                     fill 
                     className="object-cover transition-transform duration-1000 group-hover:scale-105" 
                   />
+                  {post.mediaUrls.length > 1 && (
+                    <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-xl text-[10px] font-black text-white uppercase tracking-widest border border-white/20">
+                      +{post.mediaUrls.length - 1} fotek
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Content & Data */}
               <div className="p-6 md:p-8 space-y-6">
                 {(post.amount || post.mileage || post.locationName) && (
                   <div className="flex flex-wrap gap-2.5">
@@ -181,20 +217,19 @@ export default function DashboardFeed() {
                 )}
               </div>
 
-              {/* Actions Footer */}
               <div className="px-6 py-4 bg-brand-50/20 border-t border-brand-50/50 flex items-center gap-6">
-                <button className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${post.likedByMe ? "text-red-500 scale-110" : "text-brand-300 hover:text-brand-950"}`}>
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-300">
                   <svg viewBox="0 0 24 24" fill={post.likedByMe ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
                     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                   </svg>
                   {post._count.likes}
-                </button>
-                <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-300 hover:text-brand-950 transition-all">
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-300">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                   {post._count.comments}
-                </button>
+                </div>
               </div>
             </div>
           </article>
@@ -208,6 +243,26 @@ export default function DashboardFeed() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedPost && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPost(null)}
+              className="fixed inset-0 bg-brand-950/20 backdrop-blur-sm z-[999]"
+            />
+            <PostDetail 
+              post={selectedPost} 
+              onClose={() => setSelectedPost(null)}
+              onUpdate={handleUpdatePost}
+              onDelete={handleDeletePost}
+            />
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

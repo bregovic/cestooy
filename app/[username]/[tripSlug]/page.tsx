@@ -54,17 +54,17 @@ export default async function PublicTripPage({ params }: TripPageProps) {
         select: { name: true, avatar: true, blogTitle: true, bio: true }
       },
       posts: {
-        orderBy: { loggedAt: "asc" }
+        orderBy: { loggedAt: "desc" }
       }
     }
   });
 
   if (!trip) notFound();
 
-  // Calculate smart mileage
-  const enrichedPosts = calculateExpeditionMileage(trip.posts as any);
+  // Calculate smart mileage (reverse logic handled by helper if needed, or just reverse results)
+  const enrichedPosts = calculateExpeditionMileage([...trip.posts].reverse() as any).reverse();
   
-  // Prepare map points
+  // Prepare map points (all points for the main map)
   const mapPoints = enrichedPosts
     .filter(p => p.lat !== null && p.lng !== null)
     .map(p => ({
@@ -75,134 +75,182 @@ export default async function PublicTripPage({ params }: TripPageProps) {
       type: p.type
     }));
 
+  const latestPostWithLoc = [...enrichedPosts].find(p => p.lat && p.lng);
+
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Section */}
-      <header className="relative h-[80vh] w-full overflow-hidden flex items-end">
+      <header className="relative h-[90vh] w-full overflow-hidden flex items-end">
         {trip.coverImage ? (
           <Image src={trip.coverImage} alt={trip.title} fill className="object-cover" priority />
         ) : (
           <div className="absolute inset-0 bg-brand-950" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
         
-        <div className="relative z-10 max-w-4xl mx-auto px-6 pb-20 w-full text-white">
-          <div className="flex items-center gap-3 mb-6">
-             <div className="w-1.5 h-1.5 rounded-full bg-brand-400" />
-             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-200">Expedice</span>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none mb-6">
-            {trip.title}
-          </h1>
-          <div className="flex items-center gap-6">
-             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden bg-brand-800 flex items-center justify-center font-bold">
-                 {trip.owner.avatar ? (
-                   <Image src={trip.owner.avatar} alt={trip.owner.name} width={40} height={40} />
-                 ) : trip.owner.name[0]}
+        <div className="relative z-10 max-w-6xl mx-auto px-6 pb-24 w-full flex flex-col md:flex-row items-end justify-between gap-12">
+          <div className="flex-1 text-white">
+            <div className="flex items-center gap-3 mb-6">
+               <div className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-200">Live Expedice</span>
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.85] mb-8">
+              {trip.title}
+            </h1>
+            <div className="flex items-center gap-6">
+               <div className="flex items-center gap-3">
+                 <div className="w-12 h-12 rounded-2xl border-2 border-white/20 overflow-hidden bg-brand-800 flex items-center justify-center font-bold shadow-2xl">
+                   {trip.owner.avatar ? (
+                     <Image src={trip.owner.avatar} alt={trip.owner.name} width={48} height={48} className="object-cover" />
+                   ) : trip.owner.name[0]}
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black uppercase tracking-widest text-brand-300">Zaznamenává</span>
+                   <span className="text-sm font-bold">{trip.owner.name}</span>
+                 </div>
                </div>
-               <span className="text-sm font-bold">{trip.owner.name}</span>
-             </div>
-             <div className="h-4 w-px bg-white/20" />
-             <span className="text-sm font-medium opacity-70">
-               {trip.startDate ? new Date(trip.startDate).toLocaleDateString('cs-CZ', { year: 'numeric', month: 'long' }) : 'Probíhající cesta'}
-             </span>
+               <div className="h-8 w-px bg-white/20" />
+               <div className="flex flex-col">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-300">Start cesty</span>
+                 <span className="text-sm font-bold">
+                   {trip.startDate ? new Date(trip.startDate).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' }) : 'Právě teď'}
+                 </span>
+               </div>
+            </div>
           </div>
+
+          {/* Current Location Mini Map Card like in Questea */}
+          {latestPostWithLoc && (
+            <div className="w-full md:w-64 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl animate-fade-in-up">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                 <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Aktuálně</span>
+               </div>
+               <div className="h-32 w-full rounded-2xl overflow-hidden mb-4 border border-white/10 relative">
+                  <MagazineMap points={[{ ...latestPostWithLoc, lat: latestPostWithLoc.lat!, lng: latestPostWithLoc.lng! }]} isMini />
+               </div>
+               <div className="space-y-1">
+                 <div className="text-white font-black text-sm truncate uppercase tracking-tight">
+                   {latestPostWithLoc.locationName?.split(',')[0] || "Na cestě"}
+                 </div>
+                 <div className="text-white/40 text-[9px] font-bold uppercase tracking-widest">
+                   {new Date(latestPostWithLoc.loggedAt).toLocaleString("cs-CZ", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                 </div>
+               </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <div className="h-[50vh] w-full border-y border-brand-100 relative z-20">
+      {/* Main Map Section */}
+      <div className="h-[60vh] w-full border-y border-brand-100 relative z-20">
         <MagazineMap points={mapPoints} />
-        <div className="absolute top-6 left-6 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-brand-100 max-w-[200px]">
-           <div className="text-[9px] font-black uppercase tracking-widest text-brand-400 mb-1">Aktuální poloha</div>
-           <div className="text-xs font-black text-brand-950 truncate">
-             {mapPoints.length > 0 ? mapPoints[mapPoints.length-1].locationName || "Na cestě..." : "Čekáme na signál..."}
-           </div>
-        </div>
       </div>
 
       {/* Story Content */}
-      <section className="max-w-3xl mx-auto px-6 py-24 space-y-32">
+      <section className="max-w-4xl mx-auto px-6 py-32">
         {trip.description && (
-          <div className="text-2xl font-medium text-brand-950 leading-relaxed italic border-l-4 border-brand-100 pl-8">
-            "{trip.description}"
+          <div className="text-3xl md:text-4xl font-bold text-brand-950 leading-tight mb-32 max-w-2xl">
+            {trip.description}
           </div>
         )}
 
-        <div className="space-y-40">
-          {enrichedPosts.map((post: any) => (
-            <article key={post.id} className="relative group">
-              <div className="absolute -left-12 top-0 bottom-0 w-px bg-brand-100 hidden lg:block" />
-              
-              <div className="space-y-10">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="px-4 py-2 bg-brand-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-brand-600 flex items-center gap-2">
-                    {post.type === "PHOTO" && <Icons.PHOTO className="w-3.5 h-3.5" />}
-                    {post.type === "CHECKIN" && <Icons.CHECKIN className="w-3.5 h-3.5" />}
-                    {post.type === "EXPENSE" && <Icons.EXPENSE className="w-3.5 h-3.5" />}
-                    {post.type === "MILEAGE" && <Icons.MILEAGE className="w-3.5 h-3.5" />}
-                    {post.type === "BLOG" && <Icons.BLOG className="w-3.5 h-3.5" />}
-                    {new Date(post.loggedAt).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        <div className="space-y-48">
+          {enrichedPosts.map((post: any, idx: number) => {
+            const date = new Date(post.loggedAt);
+            return (
+              <article key={post.id} className="relative">
+                {/* Timeline Number */}
+                <div className="absolute -left-20 top-0 text-[10px] font-black text-brand-100 hidden lg:block tracking-[0.5em] rotate-90 origin-left">
+                  MOMENT / {enrichedPosts.length - idx}
+                </div>
+                
+                <div className="space-y-12">
+                  {/* Meta Row */}
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="px-5 py-2.5 bg-brand-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl">
+                      {post.type === "PHOTO" && <Icons.PHOTO className="w-3.5 h-3.5" />}
+                      {post.type === "CHECKIN" && <Icons.CHECKIN className="w-3.5 h-3.5" />}
+                      {post.type === "EXPENSE" && <Icons.EXPENSE className="w-3.5 h-3.5" />}
+                      {post.type === "MILEAGE" && <Icons.MILEAGE className="w-3.5 h-3.5" />}
+                      {post.type === "BLOG" && <Icons.BLOG className="w-3.5 h-3.5" />}
+                      {date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="opacity-30">|</span>
+                      {date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' })}
+                    </div>
+
+                    {(post.locationName || post.displayMileage) && (
+                      <div className="flex flex-wrap gap-2">
+                        {post.locationName && (
+                          <div className="px-4 py-2.5 bg-brand-50 rounded-2xl text-[9px] font-black uppercase tracking-widest text-brand-600 flex items-center gap-2 border border-brand-100/50">
+                            <Icons.CHECKIN className="w-3.5 h-3.5" /> {post.locationName.split(',')[0]}
+                          </div>
+                        )}
+                        {post.displayMileage && (
+                          <div className="px-4 py-2.5 bg-orange-50 rounded-2xl text-[9px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-2 border border-orange-100/50">
+                            <Icons.MILEAGE className="w-3.5 h-3.5" /> {post.displayMileage.toLocaleString()} KM
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {(post.amount || post.displayMileage || post.locationName) && (
-                    <div className="flex flex-wrap gap-2">
-                      {post.locationName && (
-                        <div className="px-3 py-2 border border-blue-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-2">
-                          <Icons.CHECKIN className="w-3 h-3" /> {post.locationName.split(',')[0]}
+                  {/* Multi-Media Gallery */}
+                  {post.mediaUrls && post.mediaUrls.length > 0 && (
+                    <div className={`grid gap-4 ${post.mediaUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                      {post.mediaUrls.map((url: string, i: number) => (
+                        <div 
+                          key={i} 
+                          className={`relative rounded-[2.5rem] overflow-hidden shadow-2xl group transition-all duration-700 ${
+                            post.mediaUrls.length === 3 && i === 0 ? 'col-span-2 aspect-[21/9]' : 'aspect-[4/3]'
+                          }`}
+                        >
+                          {url.includes("video") || url.startsWith("data:video") ? (
+                            <video src={url} className="w-full h-full object-cover" controls />
+                          ) : (
+                            <Image src={url} alt="Story moment" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
+                          )}
                         </div>
-                      )}
-                      {post.amount && (
-                        <div className="px-3 py-2 border border-emerald-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                          <Icons.EXPENSE className="w-3 h-3" /> {post.amount.toLocaleString()} CZK
-                        </div>
-                      )}
-                      {post.displayMileage && (
-                        <div className="px-3 py-2 border border-orange-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-2">
-                          <Icons.MILEAGE className="w-3 h-3" /> {post.displayMileage.toLocaleString()} KM
-                        </div>
-                      )}
+                      ))}
+                    </div>
+                  )}
+
+                  {post.content && (
+                    <div className="text-xl md:text-3xl text-brand-950 leading-relaxed font-medium whitespace-pre-wrap max-w-2xl">
+                      {post.content}
                     </div>
                   )}
                 </div>
-
-                {post.mediaUrls && post.mediaUrls.length > 0 && (
-                  <div className="relative aspect-[16/10] w-full rounded-[2.5rem] overflow-hidden shadow-2xl group-hover:shadow-brand-950/10 transition-shadow">
-                    <Image src={post.mediaUrls[0]} alt="Story moment" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
-                  </div>
-                )}
-
-                {post.content && (
-                  <div className="text-lg md:text-2xl text-brand-950 leading-relaxed font-medium whitespace-pre-wrap">
-                    {post.content}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-brand-50/50 py-32 border-t border-brand-100">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-           <div className="w-24 h-24 rounded-[2.5rem] bg-white border border-brand-100 p-2 mx-auto mb-8 rotate-3 shadow-xl">
-             <div className="w-full h-full rounded-[2rem] overflow-hidden bg-brand-950 flex items-center justify-center text-2xl font-bold text-white">
+      {/* Author Footer */}
+      <footer className="bg-brand-950 py-48 text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-brand-500 rounded-full blur-[200px]" />
+        </div>
+        
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+           <div className="w-32 h-32 rounded-[3rem] bg-white p-2 mx-auto mb-10 -rotate-6 shadow-2xl">
+             <div className="w-full h-full rounded-[2.5rem] overflow-hidden bg-brand-950 flex items-center justify-center text-2xl font-bold">
                 {trip.owner.avatar ? (
-                  <Image src={trip.owner.avatar} alt={trip.owner.name} width={96} height={96} className="object-cover h-full" />
+                  <Image src={trip.owner.avatar} alt={trip.owner.name} width={128} height={128} className="object-cover" />
                 ) : trip.owner.name[0]}
              </div>
            </div>
-           <h3 className="text-2xl font-black text-brand-950 uppercase tracking-tight mb-4">Sledovali jste cestu: {trip.owner.name}</h3>
-           <p className="text-brand-400 font-bold text-[11px] uppercase tracking-widest max-w-md mx-auto mb-10 leading-relaxed">{trip.owner.bio || "Milovník dobrodružství a dobrých příběhů."}</p>
+           <h3 className="text-3xl font-black uppercase tracking-tight mb-6">Tuto cestu pro vás napsal {trip.owner.name}</h3>
+           <p className="text-brand-300 font-bold text-xs uppercase tracking-[0.2em] max-w-lg mx-auto mb-12 leading-relaxed opacity-60">
+             {trip.owner.bio || "Dobrodruh tělem i duší."}
+           </p>
            
-           <div className="flex justify-center gap-4">
-              <Link href={`/${username}`} className="bg-brand-950 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-brand-950/20 hover:scale-105 transition-all">Sledovat autora</Link>
+           <div className="flex justify-center gap-6">
+              <Link href={`/${username}`} className="bg-white text-brand-950 px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all">Navštívit profil autora</Link>
            </div>
         </div>
       </footer>
     </main>
   );
 }
-
-import Link from "next/link";
