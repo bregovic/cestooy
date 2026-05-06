@@ -58,7 +58,7 @@ const Icons = {
 };
 
 import { PostDetail } from "@/components/trips/PostDetail";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
