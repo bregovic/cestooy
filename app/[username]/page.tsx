@@ -18,7 +18,7 @@ export default async function UserProfilePage({ params }: UserProfileProps) {
   const user = await prisma.user.findUnique({
     where: { blogSlug: username },
     include: {
-      trips: {
+      ownedTrips: {
         where: { isPublic: true },
         include: {
           _count: { select: { posts: true } }
@@ -67,7 +67,7 @@ export default async function UserProfilePage({ params }: UserProfileProps) {
               
               <div className="flex flex-wrap justify-center md:justify-start gap-8 pt-4">
                  <div className="flex flex-col">
-                    <span className="text-3xl font-black text-brand-950 leading-none">{user.trips.length}</span>
+                    <span className="text-3xl font-black text-brand-950 leading-none">{user.ownedTrips.length}</span>
                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-300 mt-2">Expedic</span>
                  </div>
                  <div className="flex flex-col">
@@ -97,13 +97,13 @@ export default async function UserProfilePage({ params }: UserProfileProps) {
            <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-brand-300">Sbírka mých příběhů</h2>
         </div>
 
-        {user.trips.length === 0 ? (
+        {user.ownedTrips.length === 0 ? (
           <div className="py-20 text-center bg-brand-50/20 rounded-[3rem] border-2 border-dashed border-brand-100">
              <p className="text-brand-300 font-bold uppercase tracking-widest text-xs">Zatím tu žádné veřejné akce nejsou</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {user.trips.map((trip) => (
+            {user.ownedTrips.map((trip) => (
               <Link 
                 key={trip.id} 
                 href={`/${username}/${trip.slug}`}

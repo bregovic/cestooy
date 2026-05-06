@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 export const revalidate = 60;
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { calculateExpeditionMileage } from "@/lib/mileage";
 import MagazineMap from "@/components/maps/MagazineMap";
 
