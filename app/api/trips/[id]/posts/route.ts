@@ -55,7 +55,7 @@ export async function POST(
     // Revalidate paths for instant updates
     if (post.author.blogSlug) {
       revalidatePath(`/${post.author.blogSlug}`);
-      if (post.trip.slug) {
+      if (post.trip?.slug) {
         revalidatePath(`/${post.author.blogSlug}/${post.trip.slug}`);
       }
     }
